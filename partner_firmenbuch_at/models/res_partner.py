@@ -187,7 +187,7 @@ class ResPartner(models.Model):
     def _fb_refresh(self, client, accounts=False, new=False, fnr=None, extra=None):
         """Read the current extract, propose changes, check the status (and the latest annual accounts)."""
         self.ensure_one()
-        data = client.extract(fnr or self.fb_fnr, full=True)
+        data = client.extract(fnr or self.fb_fnr)
         if not data.get("fnr"):
             data["fnr"] = normalize_fnr(fnr or self.fb_fnr)
         for k in ("court", "legal_form"):
@@ -353,11 +353,12 @@ class ResPartner(models.Model):
         except FirmenbuchAuthError as e:
             _logger.warning("Business register: %s", e)
             return
-        partners = self.search([("fb_fnr", "in", list(changed | docs)), ("is_company", "=", True),
-                                 ("parent_id", "=", False)])
+        partners = self.search([("fb_fnr", "!=", False), ("is_company", "=", True), ("parent_id", "=", False)])
+        # documents are reported by register number only (without the check letter)
+        partners = partners.filtered(lambda p: p.fb_fnr in changed or p.fb_fnr.rstrip("abcdefghijklmnopqrstuvwxyz") in docs)
         for p in partners:
             try:
-                p._fb_refresh(client, accounts=p.fb_fnr in docs)
+                p._fb_refresh(client, accounts=p.fb_fnr.rstrip("abcdefghijklmnopqrstuvwxyz") in docs)
                 self._fb_commit()
             except FirmenbuchError as e:
                 _logger.info("Business register check %s failed: %s", p.display_name, e)

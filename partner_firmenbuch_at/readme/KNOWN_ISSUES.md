@@ -15,5 +15,11 @@
   notations in the street field may be reported as *House number unknown*.
 - The re-check after an update validates all Austrian partners in one run. With very many partners, switch off
   *Re-check all addresses after an update*.
+- The extract is requested with the scope *Kurzinformation* (the only scope the service accepts for this API
+  key); persons (managing directors, shareholders) are not read or stored.
+- How an opened insolvency proceeding is represented in the *Kurzinformation* could not be verified against live
+  data; the keyword check is therefore a best effort and should be confirmed with a real case.
+- Document changes are reported by the register with the register number only (without the check letter); the
+  daily monitoring matches partners by that number.
 - The module relies on the register interfaces of the BMJ and BEV. Changes there (endpoint, schema, ATOM feed)
   may require an update of the module.

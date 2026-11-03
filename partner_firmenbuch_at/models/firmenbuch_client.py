@@ -143,12 +143,14 @@ class FirmenbuchClient:
                 "<suc:ORTNR/></suc:SUCHEFIRMAREQUEST>" % (NS, _esc(name), "true" if exact else "false"))
         return self.parse_search(self._call(body))
 
-    def extract(self, fnr, full=True, stichtag=None):
-        """Current extract (Auszug V2) of one company."""
+    def extract(self, fnr, stichtag=None):
+        """Current extract (Auszug V2) of one company.
+
+        The live service only accepts the scope ``Kurzinformation``; it contains all currently valid entries.
+        """
         body = ('<aus:AUSZUG_V2_REQUEST xmlns:aus="%s/v2/AuszugRequest"><aus:FNR>%s</aus:FNR>'
-                "<aus:STICHTAG>%s</aus:STICHTAG><aus:UMFANG>%s</aus:UMFANG></aus:AUSZUG_V2_REQUEST>"
-                % (NS, _esc(normalize_fnr(fnr)), (stichtag or date.today()).isoformat(),
-                   "Vollinformation" if full else "Kurzinformation"))
+                "<aus:STICHTAG>%s</aus:STICHTAG><aus:UMFANG>Kurzinformation</aus:UMFANG></aus:AUSZUG_V2_REQUEST>"
+                % (NS, _esc(normalize_fnr(fnr)), (stichtag or date.today()).isoformat()))
         return self.parse_extract(self._call(body))
 
     def documents(self, fnr):
@@ -176,9 +178,14 @@ class FirmenbuchClient:
                         K=kind.upper(), k=kind, ns=NS, a=d.isoformat(), b=e.isoformat())
             res = self._call(body)
             for v in res.iter():
-                if _tag(v) in ("VERAENDERUNG", "ERGEBNIS") and _text(v, "FNR"):
-                    out.append({"fnr": normalize_fnr(_text(v, "FNR")), "date": _text(v, "VOLLZUGSDATUM"),
-                                "kind": _text(v, "ARTDERVERAENDERUNG"), "key": _text(v, "KEY")})
+                if _tag(v) not in ("VERAENDERUNG", "ERGEBNIS"):
+                    continue
+                key = _text(v, "KEY")
+                # document changes carry no FNR; the key starts with the register number (no check letter)
+                fnr = normalize_fnr(_text(v, "FNR")) or (key.split("_")[0].lstrip("0") if documents else "")
+                if fnr:
+                    out.append({"fnr": fnr, "date": _text(v, "VOLLZUGSDATUM"),
+                                "kind": _text(v, "ARTDERVERAENDERUNG"), "key": key})
             d = e + timedelta(days=1)
         return out
 
@@ -213,8 +220,10 @@ class FirmenbuchClient:
             t = _tag(entry)
             if t.endswith("DKZ02") and not data["name"]:
                 data["name"] = " ".join(c.text.strip() for c in entry if _tag(c) == "BEZEICHNUNG" and c.text)
-            elif t.endswith("DKZ03") and not data["street"]:
-                data.update(street=_text(entry, "STELLE"), zip=_text(entry, "PLZ"), city=_text(entry, "ORT"),
+            elif t.endswith("DKZ03") and not data["zip"]:
+                street = _text(entry, "STELLE") or " ".join(
+                    x for x in (_text(entry, "STRASSE"), _text(entry, "HAUSNUMMER")) if x)
+                data.update(street=street, zip=_text(entry, "PLZ"), city=_text(entry, "ORT"),
                             country=ISO3.get(_text(entry, "STAAT"), ""))
             elif t == "RECHTSFORM" and not data["legal_form"]:
                 data["legal_form_code"], data["legal_form"] = _text(entry, "CODE"), _text(entry, "TEXT")
@@ -224,6 +233,15 @@ class FirmenbuchClient:
                 txt = " ".join(x.strip() for x in entry.itertext() if x and x.strip())
                 if txt:
                     data["texts"].append(txt)
+                if _attr(entry, "MIT_FIRMA_GELOESCHT_DURCH_VNR") and "Firma gelöscht" not in data["texts"]:
+                    data["texts"].append("Firma gelöscht")
+        # court and latest application text come from the newest execution (VOLLZ)
+        vollz = [c for c in res if _tag(c) == "VOLLZ"]
+        if vollz:
+            last = vollz[-1]
+            data["court_code"], data["court"] = _code_text(last, "HG")
+            if _text(last, "ANTRAGSTEXT"):
+                data["texts"].append(_text(last, "ANTRAGSTEXT"))
         return data
 
     @staticmethod

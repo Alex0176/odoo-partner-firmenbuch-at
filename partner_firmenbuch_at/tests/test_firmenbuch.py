@@ -17,14 +17,17 @@ SEARCH = ENV % """<ns13:SUCHEFIRMARESPONSE xmlns:ns13="ns://firmenbuch.justiz.gv
 
 
 def extract(extra="", name="Muster Messtechnik GmbH", checksum="A1"):
-    return ENV % ("""<ns6:AUSZUG_V2_RESPONSE ns6:FNR="250723 k" ns6:PRUEFSUMME="%s" ns6:UMFANG="Vollinformation"
+    return ENV % ("""<ns6:AUSZUG_V2_RESPONSE ns6:FNR="250723 k" ns6:PRUEFSUMME="%s" ns6:UMFANG="Kurzinformation"
  xmlns:ns6="ns://firmenbuch.justiz.gv.at/Abfrage/v2/AuszugResponse"><ns6:FIRMA>
 <ns6:FI_DKZ02 ns6:AUFRECHT="true" ns6:VNR="001"><ns6:BEZEICHNUNG>%s</ns6:BEZEICHNUNG></ns6:FI_DKZ02>
 <ns6:FI_DKZ02 ns6:AUFRECHT="false" ns6:VNR="000"><ns6:BEZEICHNUNG>Alter Name GmbH</ns6:BEZEICHNUNG></ns6:FI_DKZ02>
-<ns6:FI_DKZ03 ns6:AUFRECHT="true" ns6:VNR="002"><ns6:STELLE>Hauptstraße 1</ns6:STELLE><ns6:STAAT>AUT</ns6:STAAT>
+<ns6:FI_DKZ03 ns6:AUFRECHT="true" ns6:VNR="002"><ns6:STRASSE>Hauptstraße</ns6:STRASSE><ns6:HAUSNUMMER>1</ns6:HAUSNUMMER><ns6:STAAT>AUT</ns6:STAAT>
 <ns6:PLZ>1010</ns6:PLZ><ns6:ORT>Wien</ns6:ORT></ns6:FI_DKZ03>
 <ns6:FI_DKZ07 ns6:AUFRECHT="false"><ns6:TEXT>Konkursverfahren aufgehoben 2001</ns6:TEXT></ns6:FI_DKZ07>
-%s</ns6:FIRMA></ns6:AUSZUG_V2_RESPONSE>""" % (checksum, name, extra))
+%s</ns6:FIRMA>
+<ns6:VOLLZ><ns6:VNR>001</ns6:VNR><ns6:HG><ns6:CODE>007</ns6:CODE><ns6:TEXT>Handelsgericht Wien</ns6:TEXT></ns6:HG>
+<ns6:ANTRAGSTEXT>Antrag auf Neueintragung einer Firma eingelangt am 03.06.2011</ns6:ANTRAGSTEXT></ns6:VOLLZ>
+</ns6:AUSZUG_V2_RESPONSE>""" % (checksum, name, extra))
 
 
 DOCS = ENV % """<ns15:SUCHEURKUNDERESPONSE xmlns:ns15="ns://firmenbuch.justiz.gv.at/Abfrage/SucheUrkundeResponse">
@@ -99,6 +102,20 @@ class TestFirmenbuch(TransactionCase):
         self.assertEqual((data["street"], data["zip"], data["city"], data["country"]),
                          ("Hauptstraße 1", "1010", "Wien", "AT"))
         self.assertFalse(any("Konkurs" in t for t in data["texts"]))   # no longer valid entry ignored
+        self.assertEqual((data["court"], data["court_code"]), ("Handelsgericht Wien", "007"))
+        deleted = extract('<ns6:FI_DKZ13 ns6:AUFRECHT="true" ns6:MIT_FIRMA_GELOESCHT_DURCH_VNR="003"><ns6:TEXT>x</ns6:TEXT></ns6:FI_DKZ13>')
+        self.assertIn("Firma gelöscht", FirmenbuchClient.parse_extract(FirmenbuchClient._parse(deleted.encode()))["texts"])
+
+    def test_document_changes_use_key_prefix(self):
+        resp = FirmenbuchClient._parse((ENV % (
+            '<ns1:VERAENDERUNGENURKUNDERESPONSE xmlns:ns1="ns://x"><ns1:VERAENDERUNG>'
+            "<ns1:KEY>0250723_20261101_PDF</ns1:KEY></ns1:VERAENDERUNG></ns1:VERAENDERUNGENURKUNDERESPONSE>"
+        )).encode())
+        client = FirmenbuchClient("k")
+        with patch.object(FirmenbuchClient, "_call", return_value=resp):
+            from datetime import date
+            out = client.changes(date(2026, 11, 1), date(2026, 11, 1), documents=True)
+        self.assertEqual([c["fnr"] for c in out], ["250723"])
 
     def test_annual_figures(self):
         self.assertEqual(annual_figures(ACCOUNTS, ["HGB_224_3_A"], ["HGB_231_2_22"], ["BILANZSUMME"]),
