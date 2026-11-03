@@ -18,6 +18,10 @@ class ResConfigSettings(models.TransientModel):
                                             default=True)
     firmenbuch_fill_empty = fields.Boolean("Complete empty fields of new companies automatically",
                                            config_parameter=P + "fill_empty", default=True)
+    firmenbuch_company_names = fields.Boolean("Contacts with a legal form in the name are companies",
+                                              config_parameter=P + "company_names", default=True)
+    firmenbuch_favicon = fields.Boolean("Company image from the website favicon", config_parameter=P + "favicon",
+                                        default=True)
     firmenbuch_monitor = fields.Boolean("Monitor companies daily", config_parameter=P + "monitor", default=True)
     firmenbuch_recheck_days = fields.Integer("Full re-check every (days)", config_parameter=P + "recheck_days",
                                              default=30)

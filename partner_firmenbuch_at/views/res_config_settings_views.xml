@@ -56,6 +56,12 @@
                         <setting help="Empty fields (address, register number, court, legal form) are filled in directly; differing values are always proposed.">
                             <field name="firmenbuch_fill_empty"/>
                         </setting>
+                        <setting help="A contact whose name contains GmbH, Ges.m.b.H., AG, KG, OG, OHG, KEG, SE or e.U. is saved as a company (not for contacts of a company, addresses or partners of users). The daily monitoring also corrects existing contacts.">
+                            <field name="firmenbuch_company_names"/>
+                        </setting>
+                        <setting help="During a register check, a company with a website but without image gets the favicon of its home page as image. The daily monitoring completes up to 30 companies per run.">
+                            <field name="firmenbuch_favicon"/>
+                        </setting>
                     </block>
                     <block title="Monitoring" name="firmenbuch_monitor">
                         <setting help="Every night the register is asked which companies changed; known partners are checked again and changes proposed.">

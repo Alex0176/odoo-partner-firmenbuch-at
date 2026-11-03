@@ -1,3 +1,13 @@
+**19.0.1.2.0 (2026-11-03)**
+
+- Contacts whose name carries a legal form (GmbH, Ges.m.b.H., AG, KG, OG, OHG, KEG, SE, e.U.) are saved as
+  companies - on creation, on renaming and, for existing contacts, by the daily monitoring. Not applied to contacts
+  of a company, to addresses or to partners of users. Setting "Contacts with a legal form in the name are companies".
+- Company image from the website: during a register check, a company with a website but without image gets the
+  favicon of its home page (`<link rel="icon">`, Apple touch icon or `/favicon.ico`, converted to PNG). Only public
+  hosts are contacted, downloads are limited in size and time; the daily monitoring completes up to 30 companies
+  per run. Setting "Company image from the website favicon".
+
 **19.0.1.1.1 (2026-11-03)**
 
 - Name matching found against the real customer base: the register search matches the beginning of the name, so

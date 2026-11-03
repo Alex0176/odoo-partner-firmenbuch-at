@@ -1447,3 +1447,23 @@ msgstr "Warnung:"
 #: code:addons/partner_firmenbuch_at/models/res_partner.py:0
 msgid "date"
 msgstr "Datum"
+
+#. module: partner_firmenbuch_at
+#: model:ir.model.fields,field_description:partner_firmenbuch_at.field_res_config_settings__firmenbuch_company_names
+msgid "Contacts with a legal form in the name are companies"
+msgstr "Kontakte mit Rechtsform im Namen sind Unternehmen"
+
+#. module: partner_firmenbuch_at
+#: model:ir.model.fields,field_description:partner_firmenbuch_at.field_res_config_settings__firmenbuch_favicon
+msgid "Company image from the website favicon"
+msgstr "Firmenbild aus dem Favicon der Webseite"
+
+#. module: partner_firmenbuch_at
+#: model_terms:ir.ui.view,arch_db:partner_firmenbuch_at.res_config_settings_view_form
+msgid "A contact whose name contains GmbH, Ges.m.b.H., AG, KG, OG, OHG, KEG, SE or e.U. is saved as a company (not for contacts of a company, addresses or partners of users). The daily monitoring also corrects existing contacts."
+msgstr "Ein Kontakt, dessen Name GmbH, Ges.m.b.H., AG, KG, OG, OHG, KEG, SE oder e.U. enthält, wird als Unternehmen gespeichert (nicht bei Ansprechpartnern eines Unternehmens, Adressen oder Partnern von Benutzern). Die tägliche Überwachung korrigiert auch bestehende Kontakte."
+
+#. module: partner_firmenbuch_at
+#: model_terms:ir.ui.view,arch_db:partner_firmenbuch_at.res_config_settings_view_form
+msgid "During a register check, a company with a website but without image gets the favicon of its home page as image. The daily monitoring completes up to 30 companies per run."
+msgstr "Bei einer Firmenbuchprüfung erhält ein Unternehmen mit Webseite, aber ohne Bild das Favicon seiner Startseite als Bild. Die tägliche Überwachung ergänzt bis zu 30 Unternehmen je Lauf."

@@ -11,6 +11,7 @@ from odoo import _, api, fields, models
 from odoo.modules import module as odoo_module
 from odoo.exceptions import UserError
 
+from .favicon import fetch_favicon
 from .firmenbuch_client import (FirmenbuchAuthError, FirmenbuchClient, FirmenbuchError, annual_figures,
                                 format_fnr, normalize_fnr)
 
@@ -44,6 +45,10 @@ FIELD_MAP = [("name", "name"), ("street", "street"), ("zip", "zip"), ("city", "c
 
 # fields that only mirror the register: updated directly, never proposed
 REGISTER_ONLY = ("fb_court", "fb_legal_form", "fb_managers")
+# legal forms in a name that make the contact a company: GmbH / Ges.m.b.H. (any case), AG, KG, OG, OHG, KEG, SE, e.U.
+LEGAL_FORM_RE = re.compile(r"(?i:\b(?:gmbh|ges\.?\s?m\.?\s?b\.?\s?h\.?))(?!\w)"
+                           r"|(?<!\w)(?:AG|KG|OG|OHG|KEG|SE)(?!\w)"
+                           r"|(?<!\w)e\.\s?U\.?(?!\w)")
 
 
 def _split(v):
@@ -142,8 +147,46 @@ class ResPartner(models.Model):
                                    summary=_("Business register: check customer"), note=body)
 
     # ------------------------------------------------------------ create: look up new companies
+    @api.model
+    def _fb_name_is_company(self, name):
+        """True if the name carries a legal form (GmbH, AG, KG, ...)."""
+        return bool(name) and bool(LEGAL_FORM_RE.search(name))
+
+    def _fb_company_from_name_vals(self, vals, current=None):
+        """Mark a contact as company when its name carries a legal form (setting ``company_names``).
+
+        Not applied to contacts of a company (``parent_id``), to addresses (``type`` != contact) and
+        to partners of users."""
+        if self._fb_param("company_names", "True") != "True" or not vals.get("name"):
+            return vals
+        if not self._fb_name_is_company(vals["name"]) or vals.get("is_company") or vals.get("company_type") == "company":
+            return vals
+        parent = vals.get("parent_id", current.parent_id.id if current else False)
+        ptype = vals.get("type", current.type if current else "contact")
+        if parent or (ptype and ptype != "contact") or (current and current.user_ids):
+            return vals
+        vals = dict(vals, is_company=True)
+        if "company_type" in vals:
+            vals["company_type"] = "company"
+        return vals
+
+    @api.model
+    def _fb_mark_companies(self, limit=None):
+        """Existing contacts whose name carries a legal form become companies (one-off / cron helper)."""
+        if self._fb_param("company_names", "True") != "True":
+            return self.browse()
+        domain = [("is_company", "=", False), ("parent_id", "=", False), ("type", "=", "contact"),
+                  ("user_ids", "=", False), ("name", "!=", False)]
+        todo = self.search(domain, limit=limit).filtered(lambda p: self._fb_name_is_company(p.name))
+        if todo:
+            todo.with_context(fb_no_lookup=True).write({"is_company": True})
+            _logger.info("Business register: %s contacts marked as company by their legal form: %s",
+                         len(todo), todo.ids)
+        return todo
+
     @api.model_create_multi
     def create(self, vals_list):
+        vals_list = [self._fb_company_from_name_vals(vals) for vals in vals_list]
         partners = super().create(vals_list)
         if self.env.context.get("fb_no_lookup") or self._fb_param("auto_lookup", "True") != "True" \
                 or not self._fb_param("api_key"):
@@ -155,6 +198,25 @@ class ResPartner(models.Model):
             if cron:
                 cron.sudo()._trigger()
         return partners
+
+    def write(self, vals):
+        if "name" in vals and len(self) == 1 and not self.is_company:
+            vals = self._fb_company_from_name_vals(vals, current=self)
+        return super().write(vals)
+
+    # ------------------------------------------------------------ favicon
+    def _fb_set_favicon(self):
+        """Companies with a website but without image get the favicon of their home page (setting ``favicon``)."""
+        if self._fb_param("favicon", "True") != "True":
+            return self.browse()
+        done = self.browse()
+        for p in self.filtered(lambda x: x.is_company and x.website and not x.image_1920):
+            png = fetch_favicon(p.website)
+            if png:
+                p.with_context(fb_no_lookup=True).write({"image_1920": png})
+                done |= p
+                _logger.info("Business register: favicon of %s taken from %s", p.display_name, p.website)
+        return done
 
     # ------------------------------------------------------------ buttons
     def action_fb_search(self):
@@ -280,6 +342,7 @@ class ResPartner(models.Model):
         old = self.fb_risk
         self.with_context(fb_no_lookup=True).write(vals)
         self._fb_risk_changed(old)
+        self._fb_set_favicon()
         return data
 
     def _fb_propose(self, data, new):
@@ -542,3 +605,11 @@ class ResPartner(models.Model):
                                 limit=50, order="fb_last_check asc nulls first")
             if stale:
                 stale._fb_check_batch(title=_("Business register: periodic check of %s companies") % len(stale))
+        # housekeeping independent of the register: legal form in the name, missing company images
+        self._fb_mark_companies(limit=200)
+        self._fb_commit()
+        try:
+            self.search([("is_company", "=", True), ("parent_id", "=", False), ("website", "!=", False),
+                         ("image_1920", "=", False)], limit=30)._fb_set_favicon()
+        except Exception as e:  # noqa: BLE001 - never let the monitor fail because of an icon
+            _logger.info("Business register: favicon sweep failed: %s", e)
