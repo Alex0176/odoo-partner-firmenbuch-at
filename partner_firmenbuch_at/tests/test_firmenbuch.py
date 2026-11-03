@@ -218,6 +218,21 @@ class TestFirmenbuch(TransactionCase):
         vals.update(kw)
         return self.env["res.partner"].with_context(fb_no_lookup=True).create(vals)
 
+    def test_name_matching(self):
+        P = self.env["res.partner"]
+        norm = P._fb_norm_name
+        self.assertEqual(norm("Meier&amp;Huber Ges.m.b.H."), norm("Meier & Huber Gesellschaft m.b.H."))
+        self.assertEqual(norm("Beispiel Transport GmbH in Liquidation"), norm("Beispiel Transport GmbH"))
+        self.assertEqual(norm("Anton Beispiel Ges.m.b.H. in Liqu."), norm("Anton Beispiel GmbH"))
+        self.assertEqual(norm("Alpha Parken Austria Aktien- gesellschaft"), norm("Alpha Parken Austria AG"))
+        hits = [{"name": "Dorfer Holding GmbH", "fnr": "1a"}, {"name": "Dorfer Gesellschaft m.b.H.", "fnr": "2b"}]
+        self.assertEqual(P._fb_pick("Dorfer GmbH", hits)["fnr"], "2b")
+        # several hits without an identical name: no automatic choice
+        self.assertIsNone(P._fb_pick("Dorfer", hits))
+        # a single hit of a different company is not taken over
+        self.assertIsNone(P._fb_pick("XYZA GmbH", [{"name": "RO-ZYA GmbH", "fnr": "3c"}]))
+        self.assertEqual(P._fb_pick("Muster Messtechnik", [{"name": "Muster Messtechnik GmbH", "fnr": "4d"}])["fnr"], "4d")
+
     def test_insolvency_monitoring(self):
         user = self.env["res.users"].create({"name": "Seller", "login": "fb_seller"})
         p = self._company(user_id=user.id)

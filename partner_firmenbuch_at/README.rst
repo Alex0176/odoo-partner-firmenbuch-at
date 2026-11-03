@@ -258,6 +258,16 @@ is in ``i18n/de.po``.
 History
 =======
 
+19.0.1.1.1 (2026-11-03)
+-----------------------
+
+
+- Name matching found against the real customer base: the register search matches the beginning of the name, so
+  a name ending in "GmbH" found nothing when the register spells it "Gesellschaft m.b.H."; the search is repeated
+  without the legal form. HTML entities (``&amp;``) and the suffix "in Liqu." are ignored when names are
+  compared.
+- A single hit is only taken over automatically when its name starts with the name of the partner.
+
 19.0.1.1.0 (2026-11-03)
 -----------------------
 

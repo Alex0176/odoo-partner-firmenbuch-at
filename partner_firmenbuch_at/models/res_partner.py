@@ -1,5 +1,6 @@
 # Copyright 2026 Biricon IT Services GmbH
 # License LGPL-3.0 or later (https://www.gnu.org/licenses/lgpl).
+import html
 import logging
 import re
 from datetime import timedelta
@@ -187,10 +188,8 @@ class ResPartner(models.Model):
         self.fb_lookup_pending = False
         fnr = self.fb_fnr
         if not fnr:
-            hits = client.search(self.name)
-            norm = self._fb_norm_name(self.name)
-            exact = [h for h in hits if self._fb_norm_name(h["name"]) == norm]
-            pick = exact[0] if len(exact) == 1 else (hits[0] if len(hits) == 1 else None)
+            hits = self._fb_find(client, self.name)
+            pick = self._fb_pick(self.name, hits)
             if not pick:
                 if hits:
                     self._fb_notify(_("%(n)s matches in the business register for the new company - please choose "
@@ -202,15 +201,52 @@ class ResPartner(models.Model):
         self._fb_refresh(client, accounts=True, new=True, fnr=fnr, extra=extra)
         return True
 
+    LEGAL_WORDS = {"gmbh", "gesmbh", "ges.m.b.h.", "ges.m.b.h", "gesellschaft", "m.b.h.", "mbh", "ag", "kg", "og",
+                   "e.u.", "eu", "keg", "ug", "co", "co.", "&", "und", "u.", "co.kg"}
+
+    @api.model
+    def _fb_find(self, client, name):
+        """Register search by name. The service matches the beginning of the name, so "X GmbH" finds nothing
+        when the register spells it "X Gesellschaft m.b.H."; retry without the legal form."""
+        name = html.unescape(" ".join((name or "").split()))
+        hits = client.search(name)
+        if not hits:
+            words = name.split()
+            while len(words) > 1 and words[-1].lower() in self.LEGAL_WORDS:
+                words.pop()
+            short = " ".join(words)
+            if short and short != name:
+                hits = client.search(short)
+        return hits
+
+    @api.model
+    def _fb_pick(self, name, hits):
+        """The one hit that is certainly this company, otherwise None: same normalised name, or the only hit
+        when its name starts with ours (a company must not get the number of a different one)."""
+        norm = self._fb_norm_name(name)
+        exact = [h for h in hits if self._fb_norm_name(h["name"]) == norm]
+        if len(exact) == 1:
+            return exact[0]
+        if not exact and len(hits) == 1:
+            words = html.unescape(name or "").split()
+            while len(words) > 1 and words[-1].lower() in self.LEGAL_WORDS:
+                words.pop()
+            base = self._fb_norm_name(" ".join(words))
+            if base and self._fb_norm_name(hits[0]["name"]).startswith(base):
+                return hits[0]
+        return None
+
     @staticmethod
     def _fb_norm_name(n):
-        """Company names compared without spelling variants of the legal form, case, ß/ss, punctuation."""
-        n = (n or "").lower().replace("ß", "ss")
-        for a, b in (("gesellschaft mit beschränkter haftung", "gmbh"), ("gesellschaft m.b.h.", "gmbh"),
-                     ("gesellschaft mbh", "gmbh"), ("ges.m.b.h.", "gmbh"), ("ges.m.b.h", "gmbh"),
-                     ("g.m.b.h.", "gmbh"), ("gesmbh", "gmbh"), ("aktiengesellschaft", "ag"),
-                     ("kommanditgesellschaft", "kg"), ("offene gesellschaft", "og"), ("co.kg", "co kg"),
-                     ("transportgesellschaft", "transport gmbh"), ("gesellschaft", "gmbh")):
+        """Company names compared without spelling variants of the legal form, case, ß/ss, punctuation and
+        the suffix "in Liqu." (which is a status, not part of the name)."""
+        n = html.unescape(n or "").lower().replace("ß", "ss")
+        n = re.sub(r"[\s,]+in\s+liqu\w*\.?\s*$", "", n)
+        for a, b in (("aktien- gesellschaft", "ag"), ("gesellschaft mit beschränkter haftung", "gmbh"),
+                     ("gesellschaft m.b.h.", "gmbh"), ("gesellschaft mbh", "gmbh"), ("ges.m.b.h.", "gmbh"),
+                     ("ges.m.b.h", "gmbh"), ("g.m.b.h.", "gmbh"), ("gesmbh", "gmbh"),
+                     ("aktiengesellschaft", "ag"), ("kommanditgesellschaft", "kg"), ("offene gesellschaft", "og"),
+                     ("co.kg", "co kg"), ("transportgesellschaft", "transport gmbh"), ("gesellschaft", "gmbh")):
             n = n.replace(a, b)
         return re.sub(r"[^a-z0-9äöü]", "", n)
 
