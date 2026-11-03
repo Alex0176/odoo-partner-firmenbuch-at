@@ -4,7 +4,8 @@ from odoo import _, fields, models
 from odoo.exceptions import UserError
 
 from .firmenbuch_client import FirmenbuchClient, FirmenbuchError
-from .res_partner import DEFAULT_CRITICAL, DEFAULT_EQUITY, DEFAULT_RESULT, DEFAULT_TOTAL, DEFAULT_WARNING
+from .res_partner import (DEFAULT_CRITICAL, DEFAULT_EQUITY, DEFAULT_RESULT, DEFAULT_REVENUE, DEFAULT_TOTAL,
+                          DEFAULT_WARNING)
 
 P = "partner_firmenbuch_at."
 
@@ -36,6 +37,12 @@ class ResConfigSettings(models.TransientModel):
                                           default=DEFAULT_RESULT)
     firmenbuch_total_codes = fields.Char("Item codes balance sheet total", config_parameter=P + "total_codes",
                                          default=DEFAULT_TOTAL)
+    firmenbuch_revenue_codes = fields.Char("Item codes turnover", config_parameter=P + "revenue_codes",
+                                           default=DEFAULT_REVENUE)
+    firmenbuch_revenue_drop = fields.Float("Warn on turnover drop from (%)", config_parameter=P + "revenue_drop",
+                                           default=25.0)
+    firmenbuch_insolvency_years = fields.Integer("Show former insolvency proceedings for (years)",
+                                                 config_parameter=P + "insolvency_years", default=3)
     firmenbuch_equity_ratio_min = fields.Float("Minimum equity ratio (%)", config_parameter=P + "equity_ratio_min",
                                                default=8.0)
 

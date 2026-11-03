@@ -22,8 +22,10 @@ The register data are subject to the JustizOnline terms of re-use (https://justi
 | Evaluate annual accounts | on | Read equity, result and balance sheet total from XML accounts |
 | Warn on annual loss | on | A negative annual result raises a warning |
 | Minimum equity ratio (%) | 8 | Below this ratio the status becomes *warning* (cf. § 23 URG) |
-| Critical / Warning keywords | see settings | Comma separated; found in a valid register entry |
-| Item codes (equity, result, balance sheet total) | UGB codes | First code found in the XML wins |
+| Critical / Warning keywords | see settings | Comma separated; found in a valid register entry or a recent legal fact |
+| Item codes (equity, result, balance sheet total, turnover) | Bilanzierung v4 names | First name found in the XML wins |
+| Warn on turnover drop from (%) | 25 | Turnover change to the previous year (only where turnover is published) |
+| Show former insolvency proceedings for (years) | 3 | Closed proceedings stay a *warning* for this time (0 = off) |
 | Validate Austrian addresses | on | Check addresses against the BEV register when saved |
 | Check house numbers | on | 2.5 million rows (about 400 MB); off = streets only (about 150,000 rows) |
 | Re-check all addresses after an update | on | One summary message per update |

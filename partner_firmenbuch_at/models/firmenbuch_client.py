@@ -32,6 +32,11 @@ ISO3 = {
 }
 
 
+# function codes of officers who represent the company: managing director, board member, liquidator,
+# general partner (unlimited liability), sole proprietor
+OFFICERS = ("GF", "VM", "LI", "KP", "IH", "IN")
+
+
 class FirmenbuchError(Exception):
     """Error reported by the register service or the connection."""
 
@@ -136,18 +141,22 @@ class FirmenbuchClient:
 
     # ------------------------------------------------------------ operations
     def search(self, name, exact=False):
-        """Company search by name -> list of dicts (fnr, name, seat, legal_form, court...)."""
+        """Company search by name -> list of dicts (fnr, name, seat, legal_form, court...).
+
+        The service accepts at most 50 characters: longer names are cut at a word boundary."""
+        name = " ".join((name or "").split())
+        if len(name) > 50:
+            name = name[:51].rsplit(" ", 1)[0][:50]
         body = ('<suc:SUCHEFIRMAREQUEST xmlns:suc="%s/SucheFirmaRequest">'
                 "<suc:FIRMENWORTLAUT>%s</suc:FIRMENWORTLAUT><suc:EXAKTESUCHE>%s</suc:EXAKTESUCHE>"
                 "<suc:SUCHBEREICH>1</suc:SUCHBEREICH><suc:GERICHT/><suc:RECHTSFORM/><suc:RECHTSEIGENSCHAFT/>"
                 "<suc:ORTNR/></suc:SUCHEFIRMAREQUEST>" % (NS, _esc(name), "true" if exact else "false"))
         return self.parse_search(self._call(body))
 
-    def extract(self, fnr, stichtag=None):
-        """Current extract (Auszug V2) of one company.
-
-        The live service only accepts the scope ``Kurzinformation``; it contains all currently valid entries.
-        """
+    def extract(self, fnr, full=False, stichtag=None):
+        """Current extract (Auszug V2). The free HVD access only allows the short information
+        ("Kurzinformation"); it contains name, address, seat, legal form, website, managing directors,
+        legal facts (insolvency proceedings ...) and the register entries."""
         body = ('<aus:AUSZUG_V2_REQUEST xmlns:aus="%s/v2/AuszugRequest"><aus:FNR>%s</aus:FNR>'
                 "<aus:STICHTAG>%s</aus:STICHTAG><aus:UMFANG>Kurzinformation</aus:UMFANG></aus:AUSZUG_V2_REQUEST>"
                 % (NS, _esc(normalize_fnr(fnr)), (stichtag or date.today()).isoformat()))
@@ -205,43 +214,72 @@ class FirmenbuchClient:
 
     @staticmethod
     def parse_extract(res):
-        """Extract -> dict. Only entries that are still valid (AUFRECHT not 'false') are used.
+        """Extract -> dict. Only valid entries (AUFRECHT not 'false') are used.
 
-        Name and address come from the documented data codes (DKZ02 company name, DKZ03 address);
-        every other valid text is collected in ``texts`` for the status check (insolvency etc.).
+        Data codes: DKZ02 company name, DKZ03 business address, DKZ06 seat, DKZ07 legal form, DKZ25 website;
+        RECHTSTATSACHE = legal facts (opening/closing of insolvency proceedings, dissolution ...);
+        VOLLZ = register entries (court); FUN/PER = officers.
         """
         data = {"fnr": normalize_fnr(_attr(res, "FNR")), "name": "", "street": "", "zip": "", "city": "",
-                "country": "", "legal_form": "", "legal_form_code": "", "court": "", "court_code": "",
-                "texts": [], "checksum": _attr(res, "PRUEFSUMME") or ""}
-        firma = next((c for c in res if _tag(c) == "FIRMA"), res)
-        for entry in firma.iter():
-            if entry is firma or (_attr(entry, "AUFRECHT") or "true").lower() == "false":
-                continue
+                "country": "", "seat": "", "legal_form": "", "legal_form_code": "", "court": "", "court_code": "",
+                "website": "", "managers": [], "facts": [], "texts": [], "checksum": _attr(res, "PRUEFSUMME") or ""}
+
+        def valid(el):
+            return (_attr(el, "AUFRECHT") or "true").lower() != "false"
+
+        def texts(el):
+            return " ".join(x.strip() for x in el.itertext() if x and x.strip())
+
+        firma = next((c for c in res if _tag(c) == "FIRMA"), None)
+        for entry in (firma if firma is not None else []):
             t = _tag(entry)
+            if not valid(entry):
+                continue
             if t.endswith("DKZ02") and not data["name"]:
                 data["name"] = " ".join(c.text.strip() for c in entry if _tag(c) == "BEZEICHNUNG" and c.text)
-            elif t.endswith("DKZ03") and not data["zip"]:
-                street = _text(entry, "STELLE") or " ".join(
-                    x for x in (_text(entry, "STRASSE"), _text(entry, "HAUSNUMMER")) if x)
-                data.update(street=street, zip=_text(entry, "PLZ"), city=_text(entry, "ORT"),
+            elif t.endswith("DKZ03") and not data["street"]:
+                street = " ".join(filter(None, [_text(entry, "STRASSE"), _text(entry, "HAUSNUMMER")]))
+                extra = "/".join(filter(None, [_text(entry, "STIEGE"), _text(entry, "TUER")]))
+                data.update(street=(street + ("/" + extra if extra else "")) or _text(entry, "STELLE"),
+                            zip=_text(entry, "PLZ"), city=_text(entry, "ORT"),
                             country=ISO3.get(_text(entry, "STAAT"), ""))
-            elif t == "RECHTSFORM" and not data["legal_form"]:
-                data["legal_form_code"], data["legal_form"] = _text(entry, "CODE"), _text(entry, "TEXT")
-            elif t == "GERICHT" and not data["court"]:
-                data["court_code"], data["court"] = _text(entry, "CODE"), _text(entry, "TEXT")
+            elif t.endswith("DKZ06"):
+                data["seat"] = _text(entry, "SITZ")
+            elif t.endswith("DKZ07"):
+                data["legal_form_code"], data["legal_form"] = _code_text(entry, "RECHTSFORM")
+            elif t.endswith("DKZ25"):
+                data["website"] = texts(entry).split()[0] if texts(entry) else ""
+            elif t == "RECHTSTATSACHE":
+                for rts in entry:                     # RTS_DKZ50 ... (AUFRECHT = still valid)
+                    if not valid(rts):
+                        continue
+                    lines = [c.text.strip() for c in rts if _tag(c) == "TEXT" and c.text]
+                    data["facts"].append({
+                        "code": _text(rts, "CODE"), "date": _text(rts, "DATUM_VOM"), "case": _text(rts, "ZEICHEN"),
+                        "court": _text(rts, "BEZEICHNUNG"),
+                        # first lines repeat decision date and court -> keep the statement itself
+                        "text": " ".join(x for x in lines if not x.startswith("Beschluss des Gerichtes")
+                                         and x != _text(rts, "BEZEICHNUNG")) or " ".join(lines)})
             if "DKZ" in t:
-                txt = " ".join(x.strip() for x in entry.itertext() if x and x.strip())
-                if txt:
-                    data["texts"].append(txt)
-                if _attr(entry, "MIT_FIRMA_GELOESCHT_DURCH_VNR") and "Firma gelöscht" not in data["texts"]:
-                    data["texts"].append("Firma gelöscht")
-        # court and latest application text come from the newest execution (VOLLZ)
-        vollz = [c for c in res if _tag(c) == "VOLLZ"]
-        if vollz:
-            last = vollz[-1]
-            data["court_code"], data["court"] = _code_text(last, "HG")
-            if _text(last, "ANTRAGSTEXT"):
-                data["texts"].append(_text(last, "ANTRAGSTEXT"))
+                data["texts"].append(texts(entry))
+            if _attr(entry, "MIT_FIRMA_GELOESCHT_DURCH_VNR") and "Firma gelöscht" not in data["texts"]:
+                data["texts"].append("Firma gelöscht")
+        # court: from the register entries (newest first)
+        for v in reversed([c for c in res if _tag(c) == "VOLLZ"]):
+            code, text = _code_text(v, "HG")
+            if text:
+                data["court_code"], data["court"] = code, text
+                break
+        # managing directors (handelsrechtliche Geschäftsführer / Vorstand)
+        people = {}
+        for per in (c for c in res if _tag(c) == "PER"):
+            name = next((_text(x, "NAME_FORMATIERT") for x in per if valid(x)), "")
+            people[(_attr(per, "PNR") or "").strip()] = name
+        for fun in (c for c in res if _tag(c) == "FUN"):
+            if _attr(fun, "FKEN") in OFFICERS and any(valid(x) for x in fun):
+                name = people.get((_attr(fun, "PNR") or "").strip())
+                if name and name not in data["managers"]:
+                    data["managers"].append(name)
         return data
 
     @staticmethod
@@ -258,27 +296,64 @@ class FirmenbuchClient:
         return out
 
 
-def annual_figures(xml_bytes, equity_codes, result_codes, total_codes=()):
-    """Read equity and annual result from a structured annual account (XML).
+UNIT = {"E": 1.0, "TE": 1000.0, "ME": 1000000.0}
 
-    The XML layout of the filed accounts uses the item codes of the Austrian Commercial Code (UGB);
-    which codes are read is configurable. Returns (equity, result, balance sheet total) - None when not found.
+
+def _amount(el, key="BETRAG_GJ", factor=1.0):
+    pz = next((c for c in el if _tag(c) == "POSTENZEILE"), None)
+    if pz is None:
+        return None
+    v = next(((c.text or "").strip() for c in pz if _tag(c) == key), "")
+    return float(v) * factor if re.fullmatch(r"-?\d+(?:\.\d+)?", v) else None
+
+
+def annual_figures(xml_bytes, equity_codes=("EIGENKAPITAL",), result_codes=("JAHRESUEBERSCHUSS_JAHRESFEHLBETRAG",),
+                   total_codes=("AKTIVA",), revenue_codes=("UMSATZERLOESE",)):
+    """Figures from a structured annual account (XML "Bilanzierung v4", as filed with the register).
+
+    Every item carries a POSTENZEILE with BETRAG_GJ (current year) and BETRAG_VJ (previous year).
+    Small companies only file the balance sheet: the annual result is then derived from the balance sheet
+    profit minus the profit carried forward (``result_estimated``). The turnover is only included in the
+    profit and loss account of medium-sized and large companies.
     """
+    out = dict.fromkeys(("equity", "equity_prev", "result", "result_prev", "total", "total_prev", "revenue",
+                         "revenue_prev"))
+    out.update(result_estimated=False, size_class="")
     try:
         root = ET.fromstring(xml_bytes)
     except ET.ParseError:
-        return None, None, None
+        return out
+
+    # amounts are given in the unit of the filing (EINGABEDARSTELLUNG): euro, thousand or million euro,
+    # the previous year may use another unit than the current one
+    def unit(which):
+        for e in root.iter():
+            if _tag(e) == "EINGABEDARSTELLUNG":
+                d = next((c for c in e if _tag(c) == which), None)
+                if d is not None:
+                    return UNIT.get(_text(d, "EINHEIT").upper(), 1.0)
+        return 1.0
+    f_gj, f_vj = unit("DARSTELLUNG_EINGEREICHT"), unit("DARSTELLUNG_VORHERGEHEND")
 
     def find(codes):
         for code in codes:
             for el in root.iter():
-                hit = _tag(el) == code or code in [v for v in el.attrib.values()]
-                if not hit:
-                    continue
-                for c in el.iter():
-                    txt = (c.text or "").strip().replace(" ", "")
-                    if re.fullmatch(r"-?\d+(?:[.,]\d+)?", txt):
-                        return float(txt.replace(",", "."))
+                if _tag(el) == code and _amount(el) is not None:
+                    return el
         return None
 
-    return find(equity_codes), find(result_codes), find(total_codes)
+    for key, codes in (("equity", equity_codes), ("result", result_codes), ("total", total_codes),
+                       ("revenue", revenue_codes)):
+        el = find(codes)
+        if el is not None:
+            out[key], out[key + "_prev"] = _amount(el, factor=f_gj), _amount(el, "BETRAG_VJ", f_vj)
+    if out["result"] is None:
+        el = find(("BILANZGEWINN_BILANZVERLUST",))
+        if el is not None:
+            carried = next((c for c in el if _tag(c) == "DAVON_GEWINNVORTRAG_VERLUSTVORTRAG"), None)
+            gj = _amount(el, factor=f_gj)
+            cgj = _amount(carried, factor=f_gj) if carried is not None else None
+            if gj is not None and cgj is not None:
+                out["result"], out["result_estimated"] = gj - cgj, True
+    out["size_class"] = next((e.text.strip() for e in root.iter() if _tag(e) == "GROESSENKLASSE" and e.text), "")
+    return out

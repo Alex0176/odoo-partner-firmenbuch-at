@@ -14,16 +14,19 @@ Features
   are proposed.
 * Register search on the partner form; change proposals with per-field selection.
 * Nightly monitoring of changes in the register plus periodic full re-check.
-* Warnings for insolvency, restructuring, liquidation or deletion, negative equity and (optionally) annual
-  losses from the latest XML annual accounts.
+* Insolvency monitoring from the legal facts of the register: opened proceedings (restructuring, bankruptcy,
+  no proceedings for lack of assets) are *critical* until lifted; closed proceedings stay a *warning* for a
+  configurable number of years. Liquidation, dissolution or deletion set a *warning*.
+* Court, legal form, website and managing directors from the extract; the legal facts are listed on the partner.
 * Annual accounts rating: balance sheet total, equity, equity ratio (warning below 8 %, cf. § 23 URG),
-  annual result and size class (§ 221 UGB). Small companies do not have to publish their turnover.
+  annual result (small companies: derived from the balance sheet profit), size class (§ 221 UGB incl. micro
+  companies) and, where published, turnover with the change to the previous year.
 * **Austrian address validation** against the official address register of the BEV
   (*Adresse Relationale Tabellen – Stichtagsdaten*, open data, new reference date twice a year): postcode,
   street, house number, town and federal state are checked locally; empty federal states are filled in,
   corrections (typos, wrong postcode or town) are proposed. The extract is fetched automatically from the
   official BEV INSPIRE ATOM download service (about 120 MB, 2.5 million addresses).
-* Notifications in the Discuss channel *Firmenbuch*, activity for the salesperson on critical customers,
+* Notifications in the Discuss channel *Firmenbuch* (one summary per batch run), activity for the salesperson on critical customers,
   banner on the partner form, filters and list badge.
 
 Installation
@@ -63,7 +66,8 @@ Configuration
 1. Free API key: JustizOnline (ID Austria) → *Informationsweiterverwendung* → apply for API **FBW**
    (https://justizonline.gv.at/jop/web/iwg/register).
 2. *Settings → Business Register*: enter the key and click *Test connection*.
-3. Choose channel, options, keywords and annual accounts item codes.
+3. Choose channel, options, keywords, annual accounts item codes, the turnover-drop threshold and for how many
+   years closed insolvency proceedings stay visible.
 
 Usage
 =====
@@ -105,9 +109,14 @@ affected partners; the filters *Register warning*, *Register critical*, *Address
 are available in the partner search. When a customer becomes **critical**, the salesperson (or the administrator)
 receives an activity *Business register: check customer*, and a message is posted in the channel.
 
-- *Critical*: insolvency/bankruptcy keywords in a valid register entry.
-- *Warning*: liquidation, dissolution, deletion keywords, negative equity, equity ratio below the configured
-  minimum (default 8 %, cf. § 23 URG) or (optional) an annual loss in the latest annual accounts.
+- *Critical*: an opened insolvency proceeding (restructuring, bankruptcy, no proceedings for lack of assets) in
+  the legal facts that has not been lifted, or critical keywords in a valid register entry.
+- *Warning*: a closed proceeding of the last years, liquidation, dissolution, deletion keywords, negative equity,
+  equity ratio below the configured minimum (default 8 %, cf. § 23 URG), (optional) an annual loss or a turnover
+  drop of 25 % or more in the latest annual accounts.
+
+The group *Legal facts* on the tab lists the register's legal facts with date; the field *Managing directors*
+shows who represents the company.
 
 Address validation
 ------------------
@@ -130,17 +139,19 @@ lookup, daily monitoring, annual accounts, address validation, keywords and item
 Known issues
 ============
 
-- The register status is derived from **keywords** in valid register entries. A match is a hint, not a legal
-  statement; check the register itself before you decide on credit or delivery terms.
+- The register status is derived from the **legal facts** and from **keywords** in valid register entries. A
+  match is a hint, not a legal statement; check the register itself before you decide on credit or delivery
+  terms. Proceedings are recognised by words in the free text of the legal facts (opening, lifted, confirmed
+  restructuring plan ...); an unusual wording can be missed.
 - Annual accounts are only evaluated when they were filed as **XML**. PDF-only filings are skipped. The XML layout
   differs between forms, so the item codes are configurable; for very small companies the balance sheet may be
   filed in a shortened form without the figures read here.
-- Small companies do not have to publish their turnover, so it is not shown.
+- Small companies do not have to publish their turnover, so it is not shown. Their annual result is derived
+  from the balance sheet profit minus the profit carried forward and marked as an estimate.
 - A new company is assigned automatically only if exactly one register entry has the same normalised name (legal
   form spelling, punctuation) or the search returns a single hit. Otherwise a message asks for the manual
   *Register search*.
 - Foreign companies are not looked up (only Austria or no country).
-- Company websites are not part of the register and are not filled in.
 - The first import of the address register takes a few minutes and about 400 MB of database space; the update
   replaces the tables in one transaction.
 - House numbers are compared in the register's normalised notation (for example ``51-55``, ``12a``); unusual
@@ -148,11 +159,13 @@ Known issues
 - The re-check after an update validates all Austrian partners in one run. With very many partners, switch off
   *Re-check all addresses after an update*.
 - The extract is requested with the scope *Kurzinformation* (the only scope the service accepts for this API
-  key); persons (managing directors, shareholders) are not read or stored.
-- How an opened insolvency proceeding is represented in the *Kurzinformation* could not be verified against live
-  data; the keyword check is therefore a best effort and should be confirmed with a real case.
+  key). Of the persons only the **names of the officers with power of representation** are stored (field
+  *Managing directors*); shareholders and addresses of persons are not read. These names are personal data: use
+  them for the business relationship only.
 - Document changes are reported by the register with the register number only (without the check letter); the
   daily monitoring matches partners by that number.
+- Court, legal form and managing directors mirror the register and are updated directly (never proposed);
+  name, address, register number and website remain proposals.
 - The module relies on the register interfaces of the BMJ and BEV. Changes there (endpoint, schema, ATOM feed)
   may require an update of the module.
 
@@ -160,14 +173,13 @@ Known issues
 Notes
 =====
 
-* The status check uses keywords in valid register entries and works with any register layout; the annual
+* The status check uses the legal facts and keywords in valid register entries; the annual
   accounts item codes are configurable because the XML layout of filed accounts varies by form.
 * Annual accounts are only evaluated when they were filed in XML (PDF-only filings are skipped).
 * The register data are subject to the JustizOnline terms of re-use.
 * Address data: **© Österreichisches Adressregister, Stichtagsdaten vom <date>** (BEV, free of charge,
   unrestricted use with this attribution). The attribution with the current reference date is shown in
   the settings. With house numbers the tables need about 400 MB in the database.
-* Company websites are not part of either register and are not filled in.
 
 
 Technical notes
@@ -207,12 +219,15 @@ Scheduled actions
 - Address register (BEV): update (weekly 03:15; `bev.register._cron_update()` - compares the newest reference date in the ATOM feed with the stored one; only downloads when newer)
 
 
+Batches (monitoring, periodic re-check, a multi-record *Check now*) use ``_fb_check_batch()``: the context key
+``fb_silent=True`` suppresses the per-partner message and one summary is posted in the channel.
+
 Without an API key the first two return immediately. Every company is committed on its own, so an error does not
 lose earlier results.
 
 **System parameters** (prefix ``partner_firmenbuch_at.``)
 
-``api_key``, ``auto_lookup``, ``fill_empty``, ``monitor``, ``recheck_days``, ``check_accounts``, ``warn_loss``, ``channel_id``,
+``revenue_codes``, ``revenue_drop``, ``insolvency_years``, ``api_key``, ``auto_lookup``, ``fill_empty``, ``monitor``, ``recheck_days``, ``check_accounts``, ``warn_loss``, ``channel_id``,
 ``critical_keywords``, ``warning_keywords``, ``equity_codes``, ``result_codes``, ``total_codes``, ``equity_ratio_min``,
 ``bev_enabled``, ``bev_house_numbers``, ``bev_revalidate``, ``bev_notify_changes``, ``bev_stichtag``, ``last_monitor``.
 The API key is only visible to administrators (``groups="base.group_system"`` on the settings field).
@@ -242,6 +257,20 @@ is in ``i18n/de.po``.
 
 History
 =======
+
+19.0.1.1.0 (2026-11-03)
+-----------------------
+
+
+- Insolvency monitoring from the legal facts (opened / closed proceedings, former proceedings for *n* years).
+- Court, legal form, website and managing directors from the extract; legal facts listed on the partner.
+- Annual accounts: item names of the register's "Bilanzierung v4" format, micro company size class, turnover and
+  turnover change, result of small companies derived from the balance sheet profit.
+- Summary message per batch run instead of one message per company; names are compared without spelling
+  variants of the legal form; company names longer than 50 characters are shortened for the search; a register
+  number entered through a proposal triggers the lookup.
+- Fixes found against the live service: document changes carry only the key (register number = key prefix);
+  a company flagged as deleted by the register is reported as *Firma gelöscht*.
 
 19.0.1.0.0 (2026-11-03)
 -----------------------

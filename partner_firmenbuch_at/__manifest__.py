@@ -4,7 +4,7 @@
     "name": "Austrian Business Register (Firmenbuch) for Partners",
     "summary": "Look up companies in the official Austrian business register, complete new partners, propose "
     "changes, monitor insolvency/liquidation and annual accounts, notify in Discuss",
-    "version": "19.0.1.0.0",
+    "version": "19.0.1.1.0",
     "category": "Sales/CRM",
     "author": "Biricon IT Services GmbH",
     "website": "https://github.com/Alex0176/odoo-partner-firmenbuch-at",

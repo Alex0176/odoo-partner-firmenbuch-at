@@ -46,7 +46,14 @@ class FirmenbuchProposal(models.Model):
                 else:
                     vals[line.field_name] = line.new_value
             if vals:
+                fnr_before = prop.partner_id.fb_fnr
                 prop.partner_id.with_context(fb_no_lookup=True).write(vals)
+                if "company_registry" in vals and prop.partner_id.fb_fnr != fnr_before:
+                    # register number assigned: load the register data in the background
+                    prop.partner_id.fb_lookup_pending = True
+                    cron = self.env.ref("partner_firmenbuch_at.ir_cron_firmenbuch_pending", raise_if_not_found=False)
+                    if cron:
+                        cron.sudo()._trigger()
                 msg = (_("Data taken over from the Austrian address register: %s") if prop.source == "address"
                        else _("Data taken over from the Austrian business register: %s"))
                 prop.partner_id.message_post(body=msg % ", ".join(prop.line_ids.filtered("apply").mapped("field_label")))

@@ -91,6 +91,12 @@
                                 <field name="firmenbuch_total_codes"/>
                                 <label for="firmenbuch_equity_ratio_min" class="o_light_label"/>
                                 <field name="firmenbuch_equity_ratio_min"/>
+                                <label for="firmenbuch_revenue_codes" class="o_light_label"/>
+                                <field name="firmenbuch_revenue_codes"/>
+                                <label for="firmenbuch_revenue_drop" class="o_light_label"/>
+                                <field name="firmenbuch_revenue_drop"/>
+                                <label for="firmenbuch_insolvency_years" class="o_light_label"/>
+                                <field name="firmenbuch_insolvency_years"/>
                             </div>
                         </setting>
                     </block>

@@ -1,13 +1,16 @@
 # Copyright 2026 Biricon IT Services GmbH
 # License LGPL-3.0 or later (https://www.gnu.org/licenses/lgpl).
+"""Tests with answers in the format of the live FBW web service (HVD, "Kurzinformation")."""
 import base64
+from datetime import date
 from unittest.mock import patch
 
 from odoo.tests import TransactionCase, tagged
 
 from ..models.firmenbuch_client import FirmenbuchClient, annual_figures, format_fnr, normalize_fnr
 
-ENV = '<env:Envelope xmlns:env="http://www.w3.org/2003/05/soap-envelope"><env:Header/><env:Body>%s</env:Body></env:Envelope>'
+ENV = ('<env:Envelope xmlns:env="http://www.w3.org/2003/05/soap-envelope"><env:Header/><env:Body>%s</env:Body>'
+       '</env:Envelope>')
 
 SEARCH = ENV % """<ns13:SUCHEFIRMARESPONSE xmlns:ns13="ns://firmenbuch.justiz.gv.at/Abfrage/SucheFirmaResponse">
 <ns13:ERGEBNIS><ns13:FNR>250723 k</ns13:FNR><ns13:NAME>Muster Messtechnik GmbH</ns13:NAME><ns13:SITZ>Wien</ns13:SITZ>
@@ -15,31 +18,72 @@ SEARCH = ENV % """<ns13:SUCHEFIRMARESPONSE xmlns:ns13="ns://firmenbuch.justiz.gv
 <ns13:GERICHT><ns13:CODE>007</ns13:CODE><ns13:TEXT>Handelsgericht Wien</ns13:TEXT></ns13:GERICHT></ns13:ERGEBNIS>
 </ns13:SUCHEFIRMARESPONSE>"""
 
+FACT_OPEN = """<n:RECHTSTATSACHE n:UNR="064"><n:RTS_DKZ50 n:AUFRECHT="true" n:VNR="003"><n:CODE>0904</n:CODE>
+<n:DATUM_VOM>2026-10-29</n:DATUM_VOM><n:ZEICHEN>17 S 56/26b</n:ZEICHEN><n:MULTI><n:RTS_NAME>
+<n:BEZEICHNUNG>Handelsgericht Wien</n:BEZEICHNUNG></n:RTS_NAME></n:MULTI>
+<n:TEXT>Beschluss des Gerichtes vom 29.10.2026 17 S 56/26b</n:TEXT><n:TEXT>Handelsgericht Wien</n:TEXT>
+<n:TEXT>Eröffnung des Sanierungsverfahrens</n:TEXT><n:TEXT>mit Eigenverwaltung</n:TEXT></n:RTS_DKZ50></n:RECHTSTATSACHE>"""
+FACT_CLOSED = """<n:RECHTSTATSACHE n:UNR="065"><n:RTS_DKZ50 n:AUFRECHT="true" n:VNR="004"><n:CODE>0958</n:CODE>
+<n:DATUM_VOM>2026-11-02</n:DATUM_VOM><n:ZEICHEN>17 S 56/26b</n:ZEICHEN>
+<n:TEXT>Der Sanierungsplan ist rechtskräftig bestätigt.</n:TEXT><n:TEXT>Das Sanierungsverfahren ist aufgehoben.</n:TEXT>
+</n:RTS_DKZ50></n:RECHTSTATSACHE>"""
 
-def extract(extra="", name="Muster Messtechnik GmbH", checksum="A1"):
-    return ENV % ("""<ns6:AUSZUG_V2_RESPONSE ns6:FNR="250723 k" ns6:PRUEFSUMME="%s" ns6:UMFANG="Kurzinformation"
- xmlns:ns6="ns://firmenbuch.justiz.gv.at/Abfrage/v2/AuszugResponse"><ns6:FIRMA>
-<ns6:FI_DKZ02 ns6:AUFRECHT="true" ns6:VNR="001"><ns6:BEZEICHNUNG>%s</ns6:BEZEICHNUNG></ns6:FI_DKZ02>
-<ns6:FI_DKZ02 ns6:AUFRECHT="false" ns6:VNR="000"><ns6:BEZEICHNUNG>Alter Name GmbH</ns6:BEZEICHNUNG></ns6:FI_DKZ02>
-<ns6:FI_DKZ03 ns6:AUFRECHT="true" ns6:VNR="002"><ns6:STRASSE>Hauptstraße</ns6:STRASSE><ns6:HAUSNUMMER>1</ns6:HAUSNUMMER><ns6:STAAT>AUT</ns6:STAAT>
-<ns6:PLZ>1010</ns6:PLZ><ns6:ORT>Wien</ns6:ORT></ns6:FI_DKZ03>
-<ns6:FI_DKZ07 ns6:AUFRECHT="false"><ns6:TEXT>Konkursverfahren aufgehoben 2001</ns6:TEXT></ns6:FI_DKZ07>
-%s</ns6:FIRMA>
-<ns6:VOLLZ><ns6:VNR>001</ns6:VNR><ns6:HG><ns6:CODE>007</ns6:CODE><ns6:TEXT>Handelsgericht Wien</ns6:TEXT></ns6:HG>
-<ns6:ANTRAGSTEXT>Antrag auf Neueintragung einer Firma eingelangt am 03.06.2011</ns6:ANTRAGSTEXT></ns6:VOLLZ>
-</ns6:AUSZUG_V2_RESPONSE>""" % (checksum, name, extra))
+
+def extract(facts="", name="Muster Messtechnik GmbH", checksum="A1"):
+    return ENV % ("""<n:AUSZUG_V2_RESPONSE n:FNR="250723 k" n:PRUEFSUMME="%s" n:UMFANG="Kurzinformation"
+ xmlns:n="ns://firmenbuch.justiz.gv.at/Abfrage/v2/AuszugResponse"><n:FIRMA>
+<n:FI_DKZ02 n:AUFRECHT="true" n:VNR="001"><n:BEZEICHNUNG>%s</n:BEZEICHNUNG></n:FI_DKZ02>
+<n:FI_DKZ02 n:AUFRECHT="false" n:VNR="000"><n:BEZEICHNUNG>Alter Name GmbH</n:BEZEICHNUNG></n:FI_DKZ02>
+<n:FI_DKZ03 n:AUFRECHT="true" n:VNR="002"><n:STRASSE>Hauptstraße</n:STRASSE><n:HAUSNUMMER>1</n:HAUSNUMMER>
+<n:STAAT>AUT</n:STAAT><n:PLZ>1010</n:PLZ><n:ORT>Wien</n:ORT><n:ZUSTELLBAR>true</n:ZUSTELLBAR></n:FI_DKZ03>
+<n:FI_DKZ06 n:AUFRECHT="true"><n:ORTNR><n:CODE>90101</n:CODE><n:TEXT>Wien</n:TEXT></n:ORTNR><n:SITZ>Wien</n:SITZ></n:FI_DKZ06>
+<n:FI_DKZ07 n:AUFRECHT="true"><n:RECHTSFORM><n:CODE>GES</n:CODE><n:TEXT>Gesellschaft mit beschränkter Haftung</n:TEXT>
+</n:RECHTSFORM></n:FI_DKZ07>
+<n:FI_DKZ25 n:AUFRECHT="true"><n:TEXT>www.muster-messtechnik.at</n:TEXT></n:FI_DKZ25>
+<n:RECHTSTATSACHE n:UNR="001"><n:RTS_DKZ50 n:AUFRECHT="false"><n:CODE>0904</n:CODE><n:DATUM_VOM>2001-01-01</n:DATUM_VOM>
+<n:TEXT>Eröffnung des Konkursverfahrens</n:TEXT></n:RTS_DKZ50></n:RECHTSTATSACHE>
+%s</n:FIRMA>
+<n:FUN n:FKEN="GF" n:FKENTEXT="GESCHÄFTSFÜHRER/IN (handelsrechtlich)" n:PNR="  F">
+<n:FU_DKZ10 n:AUFRECHT="true" n:VNR="017"><n:TEXT>vertritt seit 01.01.2015 selbständig</n:TEXT></n:FU_DKZ10></n:FUN>
+<n:FUN n:FKEN="PR" n:FKENTEXT="PROKURIST" n:PNR="  G"><n:FU_DKZ10 n:AUFRECHT="true"/></n:FUN>
+<n:PER n:PNR="  F"><n:PE_DKZ02 n:AUFRECHT="true"><n:NAME_FORMATIERT>Maria Muster</n:NAME_FORMATIERT></n:PE_DKZ02></n:PER>
+<n:PER n:PNR="  G"><n:PE_DKZ02 n:AUFRECHT="true"><n:NAME_FORMATIERT>Paul Prokura</n:NAME_FORMATIERT></n:PE_DKZ02></n:PER>
+<n:VOLLZ><n:VNR>001</n:VNR><n:HG><n:CODE>007</n:CODE><n:TEXT>Handelsgericht Wien</n:TEXT></n:HG></n:VOLLZ>
+</n:AUSZUG_V2_RESPONSE>""" % (checksum, name, facts))
 
 
 DOCS = ENV % """<ns15:SUCHEURKUNDERESPONSE xmlns:ns15="ns://firmenbuch.justiz.gv.at/Abfrage/SucheUrkundeResponse">
-<ns15:ERGEBNIS><ns15:KEY>K2024_XML</ns15:KEY><ns15:DOKUMENTART><ns15:CODE>48</ns15:CODE><ns15:TEXT>Jahresabschluss</ns15:TEXT>
+<ns15:ERGEBNIS><ns15:KEY>K2025_XML</ns15:KEY><ns15:DOKUMENTART><ns15:CODE>48</ns15:CODE><ns15:TEXT>Jahresabschluss</ns15:TEXT>
 </ns15:DOKUMENTART><ns15:CONTENTTYPE>application/xml</ns15:CONTENTTYPE><ns15:DATEIENDUNG>xml</ns15:DATEIENDUNG>
-<ns15:STICHTAG>2024-12-31</ns15:STICHTAG><ns15:GKL>K</ns15:GKL></ns15:ERGEBNIS>
-<ns15:ERGEBNIS><ns15:KEY>K2023_PDF</ns15:KEY><ns15:DOKUMENTART><ns15:CODE>48</ns15:CODE><ns15:TEXT>Jahresabschluss</ns15:TEXT>
-</ns15:DOKUMENTART><ns15:DATEIENDUNG>pdf</ns15:DATEIENDUNG><ns15:STICHTAG>2023-12-31</ns15:STICHTAG></ns15:ERGEBNIS>
-</ns15:SUCHEURKUNDERESPONSE>"""
+<ns15:STICHTAG>2025-12-31</ns15:STICHTAG><ns15:GKL>M</ns15:GKL></ns15:ERGEBNIS>
+<ns15:ERGEBNIS><ns15:KEY>K2025_PDF</ns15:KEY><ns15:DOKUMENTART><ns15:CODE>48</ns15:CODE><ns15:TEXT>Jahresabschluss</ns15:TEXT>
+</ns15:DOKUMENTART><ns15:DATEIENDUNG>pdf</ns15:DATEIENDUNG><ns15:STICHTAG>2025-12-31</ns15:STICHTAG><ns15:GKL>M</ns15:GKL>
+</ns15:ERGEBNIS></ns15:SUCHEURKUNDERESPONSE>"""
 
-ACCOUNTS = b"<JAHRESABSCHLUSS><BILANZ><BILANZSUMME>250000</BILANZSUMME><HGB_224_3_A><BETRAG>-12500.50</BETRAG></HGB_224_3_A></BILANZ>" \
-           b"<GUV><HGB_231_2_22><BETRAG>-3000</BETRAG></HGB_231_2_22></GUV></JAHRESABSCHLUSS>"
+
+def pz(gj, vj):
+    return "<POSTENZEILE><BETRAG_GJ>%s</BETRAG_GJ><BETRAG_VJ>%s</BETRAG_VJ></POSTENZEILE>" % (gj, vj)
+
+
+# "Bilanzierung v4": current year in euro, previous year in thousand euro (as filed by large companies)
+ACCOUNTS = ("""<UEBERMITTLUNG xmlns="ns://justiz.gv.at/Bilanzierung/v4.0/Bilanz"><ALLGEMEINE_ANGABEN><GESCHAEFTSJAHR>
+<GROESSENKLASSE>M</GROESSENKLASSE><EINGABEDARSTELLUNG>
+<DARSTELLUNG_EINGEREICHT><EINHEIT>E</EINHEIT></DARSTELLUNG_EINGEREICHT>
+<DARSTELLUNG_VORHERGEHEND><EINHEIT>TE</EINHEIT></DARSTELLUNG_VORHERGEHEND></EINGABEDARSTELLUNG></GESCHAEFTSJAHR>
+</ALLGEMEINE_ANGABEN><BILANZ><AKTIVA>%s</AKTIVA><PASSIVA>%s<EIGENKAPITAL>%s</EIGENKAPITAL></PASSIVA></BILANZ>
+<GUV_GKV><BILANZ_GEWINN_VERLUST><JAHRESUEBERSCHUSS_JAHRESFEHLBETRAG>%s<ERGEBNIS_NACH_STEUERN>%s
+<ERGEBNIS_VOR_STEUERN><ZWISCHENSUMME_BETRIEBSERFOLG><UMSATZERLOESE>%s</UMSATZERLOESE></ZWISCHENSUMME_BETRIEBSERFOLG>
+</ERGEBNIS_VOR_STEUERN></ERGEBNIS_NACH_STEUERN></JAHRESUEBERSCHUSS_JAHRESFEHLBETRAG></BILANZ_GEWINN_VERLUST></GUV_GKV>
+</UEBERMITTLUNG>""" % (pz("1000000.00", "1200"), pz("1000000.00", "1200"), pz("50000.00", "80"),
+                       pz("-30000.00", "10"), pz("-30000.00", "10"), pz("600000.00", "1000"))).encode()
+
+# small company: balance sheet only
+ACCOUNTS_SMALL = ("""<UEBERMITTLUNG><BILANZ><AKTIVA>%s</AKTIVA><PASSIVA><EIGENKAPITAL>%s
+<BILANZGEWINN_BILANZVERLUST>%s<DAVON_GEWINNVORTRAG_VERLUSTVORTRAG davon="true">%s</DAVON_GEWINNVORTRAG_VERLUSTVORTRAG>
+</BILANZGEWINN_BILANZVERLUST></EIGENKAPITAL></PASSIVA></BILANZ></UEBERMITTLUNG>""" % (
+    pz("491905.82", "367097.35"), pz("316677.71", "297096.20"), pz("216677.71", "197096.20"),
+    pz("197096.20", "105375.52"))).encode()
+
 DOC = ENV % ("""<ns7:URKUNDERESPONSE xmlns:ns7="ns://firmenbuch.justiz.gv.at/Abfrage/UrkundeResponse"><ns7:DOKUMENT>
 <ns7:CONTENTTYPE>application/xml</ns7:CONTENTTYPE><ns7:CONTENT>%s</ns7:CONTENT></ns7:DOKUMENT></ns7:URKUNDERESPONSE>"""
              % base64.b64encode(ACCOUNTS).decode())
@@ -96,31 +140,45 @@ class TestFirmenbuch(TransactionCase):
         self.assertEqual(normalize_fnr("ATU12345678"), "")
         self.assertEqual(format_fnr("007064p"), "FN 7064p")
 
+    def test_search_length(self):
+        FirmenbuchClient("k").search("WPD Wartungs- und Prüfungsdienst von Messanlagen GmbH")
+        self.assertIn("<suc:FIRMENWORTLAUT>WPD Wartungs- und Prüfungsdienst von Messanlagen</suc:FIRMENWORTLAUT>",
+                      self.fake.calls[-1])
+
     def test_parse_extract(self):
         data = FirmenbuchClient("k").extract("250723k")
         self.assertEqual(data["name"], "Muster Messtechnik GmbH")      # historic name ignored
         self.assertEqual((data["street"], data["zip"], data["city"], data["country"]),
                          ("Hauptstraße 1", "1010", "Wien", "AT"))
-        self.assertFalse(any("Konkurs" in t for t in data["texts"]))   # no longer valid entry ignored
-        self.assertEqual((data["court"], data["court_code"]), ("Handelsgericht Wien", "007"))
-        deleted = extract('<ns6:FI_DKZ13 ns6:AUFRECHT="true" ns6:MIT_FIRMA_GELOESCHT_DURCH_VNR="003"><ns6:TEXT>x</ns6:TEXT></ns6:FI_DKZ13>')
-        self.assertIn("Firma gelöscht", FirmenbuchClient.parse_extract(FirmenbuchClient._parse(deleted.encode()))["texts"])
+        self.assertEqual((data["legal_form"], data["court"], data["website"]),
+                         ("Gesellschaft mit beschränkter Haftung", "Handelsgericht Wien", "www.muster-messtechnik.at"))
+        self.assertEqual(data["managers"], ["Maria Muster"])           # no authorised officers (Prokura)
+        self.assertEqual(data["facts"], [])                            # cancelled legal fact ignored
+
+    def test_deleted_company_flag(self):
+        deleted = extract('<n:FI_DKZ13 n:AUFRECHT="true" n:MIT_FIRMA_GELOESCHT_DURCH_VNR="003"><n:TEXT>x</n:TEXT></n:FI_DKZ13>')
+        data = FirmenbuchClient.parse_extract(FirmenbuchClient._parse(deleted.encode()))
+        self.assertIn("Firma gelöscht", data["texts"])
 
     def test_document_changes_use_key_prefix(self):
         resp = FirmenbuchClient._parse((ENV % (
             '<ns1:VERAENDERUNGENURKUNDERESPONSE xmlns:ns1="ns://x"><ns1:VERAENDERUNG>'
             "<ns1:KEY>0250723_20261101_PDF</ns1:KEY></ns1:VERAENDERUNG></ns1:VERAENDERUNGENURKUNDERESPONSE>"
         )).encode())
-        client = FirmenbuchClient("k")
         with patch.object(FirmenbuchClient, "_call", return_value=resp):
-            from datetime import date
-            out = client.changes(date(2026, 11, 1), date(2026, 11, 1), documents=True)
+            out = FirmenbuchClient("k").changes(date(2026, 11, 1), date(2026, 11, 1), documents=True)
         self.assertEqual([c["fnr"] for c in out], ["250723"])
 
     def test_annual_figures(self):
-        self.assertEqual(annual_figures(ACCOUNTS, ["HGB_224_3_A"], ["HGB_231_2_22"], ["BILANZSUMME"]),
-                         (-12500.5, -3000.0, 250000.0))
-        self.assertEqual(annual_figures(b"<x/>", ["A"], ["B"]), (None, None, None))
+        f = annual_figures(ACCOUNTS)
+        self.assertEqual((f["total"], f["total_prev"], f["equity"], f["result"], f["revenue"], f["revenue_prev"]),
+                         (1000000.0, 1200000.0, 50000.0, -30000.0, 600000.0, 1000000.0))
+        self.assertEqual(f["size_class"], "M")
+        s = annual_figures(ACCOUNTS_SMALL)
+        self.assertAlmostEqual(s["result"], 19581.51, places=2)        # balance sheet profit - carried forward
+        self.assertTrue(s["result_estimated"])
+        self.assertIsNone(s["revenue"])
+        self.assertIsNone(annual_figures(b"<x/>")["equity"])
 
     def test_new_company_completed_and_proposed(self):
         before = self._channel_messages()
@@ -131,44 +189,64 @@ class TestFirmenbuch(TransactionCase):
         # empty fields completed directly
         self.assertEqual(p.company_registry, "FN 250723k")
         self.assertEqual((p.street, p.zip, p.country_id), ("Hauptstraße 1", "1010", self.at))
+        self.assertEqual((p.website, p.fb_managers), ("https://www.muster-messtechnik.at", "Maria Muster"))
         # differing values only proposed
         self.assertEqual(p.city, "Graz")
         prop = p.fb_proposal_ids
         self.assertEqual(prop.state, "pending")
         self.assertEqual(set(prop.line_ids.mapped("field_name")), {"name", "city"})
         self.assertGreater(self._channel_messages(), before)
-        # annual accounts: negative equity and loss -> warning
+        # annual accounts: equity ratio 5 %, loss, turnover -40 % -> warning
         self.assertEqual(p.fb_risk, "warning")
-        self.assertEqual(p.fb_equity, -12500.5)
-        self.assertIn("negative equity", p.fb_risk_note)
-        self.assertEqual((p.fb_balance_total, p.fb_size_class), (250000.0, "K"))
+        self.assertEqual((p.fb_balance_total, p.fb_size_class, p.fb_revenue, p.fb_revenue_change),
+                         (1000000.0, "M", 600000.0, -40.0))
+        self.assertAlmostEqual(p.fb_equity_ratio, 5.0)
+        self.assertIn("equity ratio 5.0", p.fb_risk_note)
+        self.assertIn("annual loss", p.fb_risk_note)
+        self.assertIn("turnover -40.0", p.fb_risk_note)
         prop.line_ids.filtered(lambda l: l.field_name == "city").apply = False
         prop.action_apply()
         self.assertEqual(p.name, "Muster Messtechnik GmbH")
         self.assertEqual(p.city, "Graz")
         self.assertEqual(prop.state, "applied")
 
+    def _company(self, **kw):
+        vals = {"name": "Muster Messtechnik GmbH", "is_company": True, "company_registry": "250723k",
+                "street": "Hauptstraße 1", "zip": "1010", "city": "Wien", "country_id": self.at.id,
+                "fb_court": "Handelsgericht Wien", "website": "https://www.muster-messtechnik.at",
+                "fb_legal_form": "Gesellschaft mit beschränkter Haftung", "fb_managers": "Maria Muster"}
+        vals.update(kw)
+        return self.env["res.partner"].with_context(fb_no_lookup=True).create(vals)
+
     def test_insolvency_monitoring(self):
         user = self.env["res.users"].create({"name": "Seller", "login": "fb_seller"})
-        p = self.env["res.partner"].with_context(fb_no_lookup=True).create({
-            "name": "Muster Messtechnik GmbH", "is_company": True, "company_registry": "250723k",
-            "street": "Hauptstraße 1", "zip": "1010", "city": "Wien", "country_id": self.at.id, "user_id": user.id,
-            "fb_court": "Handelsgericht Wien"})
+        p = self._company(user_id=user.id)
         contact = self.env["res.partner"].create({"name": "Maria Muster", "parent_id": p.id})
         self.assertEqual(contact.fb_fnr, "250723k")      # inherited from the company ...
-        self.fake.extract = extract(
-            '<ns6:FI_DKZ12 ns6:AUFRECHT="true"><ns6:TEXT>Konkursverfahren eröffnet 2026-11-02</ns6:TEXT></ns6:FI_DKZ12>',
-            checksum="B2")
+        self.fake.extract = extract(FACT_OPEN, checksum="B2")
         try:
             self.env["ir.config_parameter"].sudo().set_param("partner_firmenbuch_at.check_accounts", "False")
             self.env["res.partner"]._cron_fb_monitor()
         finally:
             self.fake.extract = extract()
         self.assertEqual(p.fb_risk, "critical")
-        self.assertIn("Konkursverfahren", p.fb_risk_note)
+        self.assertIn("Eröffnung des Sanierungsverfahrens", p.fb_risk_note)
+        self.assertIn("17 S 56/26b", p.fb_risk_note)
         self.assertTrue(p.activity_ids.filtered(lambda a: a.user_id == user))
         self.assertFalse(p.fb_proposal_ids)          # data unchanged -> nothing to propose
         self.assertEqual(contact.fb_risk, "unknown")   # ... but only the company itself is checked
+
+    def test_closed_proceedings_warning(self):
+        p = self._company()
+        self.fake.extract = extract(FACT_OPEN + FACT_CLOSED, checksum="C3")
+        try:
+            self.env["ir.config_parameter"].sudo().set_param("partner_firmenbuch_at.check_accounts", "False")
+            p._fb_refresh(p._fb_client())
+        finally:
+            self.fake.extract = extract()
+        self.assertEqual(p.fb_risk, "warning")
+        self.assertIn("Former insolvency proceedings", p.fb_risk_note)
+        self.assertIn("Sanierungsplan", p.fb_facts)
 
     def test_no_lookup_without_key(self):
         self.env["ir.config_parameter"].sudo().set_param("partner_firmenbuch_at.api_key", "")

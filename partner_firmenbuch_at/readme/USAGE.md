@@ -27,9 +27,14 @@ affected partners; the filters *Register warning*, *Register critical*, *Address
 are available in the partner search. When a customer becomes **critical**, the salesperson (or the administrator)
 receives an activity *Business register: check customer*, and a message is posted in the channel.
 
-- *Critical*: insolvency/bankruptcy keywords in a valid register entry.
-- *Warning*: liquidation, dissolution, deletion keywords, negative equity, equity ratio below the configured
-  minimum (default 8 %, cf. § 23 URG) or (optional) an annual loss in the latest annual accounts.
+- *Critical*: an opened insolvency proceeding (restructuring, bankruptcy, no proceedings for lack of assets) in
+  the legal facts that has not been lifted, or critical keywords in a valid register entry.
+- *Warning*: a closed proceeding of the last years, liquidation, dissolution, deletion keywords, negative equity,
+  equity ratio below the configured minimum (default 8 %, cf. § 23 URG), (optional) an annual loss or a turnover
+  drop of 25 % or more in the latest annual accounts.
+
+The group *Legal facts* on the tab lists the register's legal facts with date; the field *Managing directors*
+shows who represents the company.
 
 **Address validation**
 

@@ -4,13 +4,14 @@
   company, in Austria or without country) is sent to `justizonline.gv.at`, together with the API key in the header
   `X-API-KEY`. Private persons and contacts of a company are never sent. Requests are spaced 0.3 s apart.
 - Address register: only the download of the public extract; no partner data leaves the system.
-- All register answers are stored on the partner (checksum, status, annual-accounts figures) and in proposals.
+- All register answers are stored on the partner (checksum, status, legal facts, names of the managing
+  directors, annual-accounts figures) and in proposals.
 
 **Models**
 
 | Model | Purpose |
 |---|---|
-| `res.partner` (extended) | `fb_*` fields (register number, court, legal form, status `fb_risk`, findings, last check, checksum, equity, result, balance sheet total, equity ratio, size class UGB, pending flag), `bev_status` / `bev_message` for the address check |
+| `res.partner` (extended) | `fb_*` fields (register number, court, legal form, status `fb_risk`, findings, last check, checksum, equity, result, turnover and previous year, balance sheet total, equity ratio, size class UGB, managing directors, legal facts, pending flag), `bev_status` / `bev_message` for the address check |
 | `firmenbuch.proposal` / `.line` | Change proposal with state `pending`, `applied`, `rejected`, `outdated`; source `register` or `address`; one line per field with old value, new value and an *Apply* flag |
 | `firmenbuch.search.wizard` / `.result` | Transient models of the register search |
 | `bev.locality`, `bev.street`, `bev.address` | Lean copy of the BEV tables (no `create_uid`/`write_date` columns); index `bev_address_zip_skz_hnr` |
@@ -28,12 +29,15 @@ dependency, so it can be tested with canned XML answers (see `tests/`).
 | Business register: monitor companies | daily 04:30 | `_cron_fb_monitor()` - changed companies and documents since the last run (max. 30 days back, split into 7-day requests), then up to 50 partners whose last check is older than *Full re-check every (days)* |
 | Address register (BEV): update | weekly 03:15 | `bev.register._cron_update()` - compares the newest reference date in the ATOM feed with the stored one; only downloads when newer |
 
+Batches (monitoring, periodic re-check, a multi-record *Check now*) use `_fb_check_batch()`: the context key
+`fb_silent=True` suppresses the per-partner message and one summary is posted in the channel.
+
 Without an API key the first two return immediately. Every company is committed on its own, so an error does not
 lose earlier results.
 
 **System parameters** (prefix `partner_firmenbuch_at.`)
 
-`api_key`, `auto_lookup`, `fill_empty`, `monitor`, `recheck_days`, `check_accounts`, `warn_loss`, `channel_id`,
+`revenue_codes`, `revenue_drop`, `insolvency_years`, `api_key`, `auto_lookup`, `fill_empty`, `monitor`, `recheck_days`, `check_accounts`, `warn_loss`, `channel_id`,
 `critical_keywords`, `warning_keywords`, `equity_codes`, `result_codes`, `total_codes`, `equity_ratio_min`,
 `bev_enabled`, `bev_house_numbers`, `bev_revalidate`, `bev_notify_changes`, `bev_stichtag`, `last_monitor`.
 The API key is only visible to administrators (`groups="base.group_system"` on the settings field).

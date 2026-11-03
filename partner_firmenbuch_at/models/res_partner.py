@@ -20,18 +20,29 @@ DEFAULT_CRITICAL = ("Konkursverfahren, Insolvenzverfahren, Sanierungsverfahren, 
                     "Schuldenregulierungsverfahren, mangels Vermögens, mangels kostendeckenden Vermögens, "
                     "Zahlungsunfähigkeit, Konkursantrag, Insolvenz")
 DEFAULT_WARNING = "Liquidation, aufgelöst, Auflösung, Abwicklung, Löschung, gelöscht, Verschmelzung, in Liqu."
-# UGB item codes in the XML annual accounts: equity (balance sheet liabilities A) and annual result
-DEFAULT_EQUITY = "HGB_224_3_A, EIGENKAPITAL"
-DEFAULT_TOTAL = "BILANZSUMME, SUMME_AKTIVA, SUMME_PASSIVA"
-SIZE = [("KS", "Micro"), ("K", "Small"), ("M", "Medium-sized"), ("G", "Large")]
-DEFAULT_RESULT = "HGB_231_2_22, HGB_231_3_21, JAHRESUEBERSCHUSS, JAHRESFEHLBETRAG, BILANZGEWINN"
+# item names in the XML annual accounts ("Bilanzierung v4" of the register)
+DEFAULT_EQUITY = "EIGENKAPITAL"
+DEFAULT_TOTAL = "AKTIVA"
+DEFAULT_RESULT = "JAHRESUEBERSCHUSS_JAHRESFEHLBETRAG"
+DEFAULT_REVENUE = "UMSATZERLOESE"
+# size class codes of the filings (§ 221 UGB); W = micro company (Kleinstkapitalgesellschaft)
+SIZE = [("W", "Micro"), ("K", "Small"), ("M", "Medium-sized"), ("G", "Large")]
+OPEN_WORDS = ("eröffnung", "eröffnet")
+CLOSE_WORDS = ("aufgehoben", "aufhebung", "eingestellt", "beendet", "rechtskräftig bestätigt")
+PROCEEDINGS = ("sanierungsverfahren", "konkursverfahren", "insolvenzverfahren", "schuldenregulierungsverfahren",
+               "konkurs", "insolvenz")
 
 RISK = [("unknown", "Not checked"), ("ok", "No findings"), ("warning", "Warning"), ("critical", "Critical")]
 RANK = {"unknown": 0, "ok": 1, "warning": 2, "critical": 3}
 
 # partner field -> key of the register data
 FIELD_MAP = [("name", "name"), ("street", "street"), ("zip", "zip"), ("city", "city"), ("country_id", "country"),
-             ("company_registry", "fnr"), ("fb_court", "court"), ("fb_legal_form", "legal_form")]
+             ("company_registry", "fnr"), ("website", "website"), ("fb_court", "court"),
+             ("fb_legal_form", "legal_form"), ("fb_managers", "managers")]
+
+
+# fields that only mirror the register: updated directly, never proposed
+REGISTER_ONLY = ("fb_court", "fb_legal_form", "fb_managers")
 
 
 def _split(v):
@@ -58,6 +69,16 @@ class ResPartner(models.Model):
     fb_size_class = fields.Selection(SIZE, "Size class (UGB)", copy=False, readonly=True,
                                      help="Size class of the company according to § 221 UGB as filed with the annual "
                                           "accounts. Small companies do not have to publish their turnover.")
+    fb_revenue = fields.Monetary("Turnover", copy=False, readonly=True, currency_field="fb_currency_id",
+                                 help="Only medium-sized and large companies publish their turnover.")
+    fb_revenue_prev = fields.Monetary("Turnover previous year", copy=False, readonly=True,
+                                      currency_field="fb_currency_id")
+    fb_revenue_change = fields.Float("Turnover change (%)", copy=False, readonly=True, digits=(5, 1))
+    fb_result_estimated = fields.Boolean("Result derived from the balance sheet", copy=False, readonly=True,
+                                         help="Small companies file no profit and loss account; the result is the "
+                                              "balance sheet profit minus the profit carried forward.")
+    fb_managers = fields.Char("Managing directors (register)")
+    fb_facts = fields.Text("Legal facts (register)", copy=False, readonly=True)
     fb_accounts_date = fields.Date("Balance sheet date", copy=False, readonly=True)
     fb_accounts_key = fields.Char(copy=False, readonly=True)
     fb_currency_id = fields.Many2one("res.currency", compute="_compute_fb_currency")
@@ -112,7 +133,7 @@ class ResPartner(models.Model):
         self.ensure_one()
         link = Markup('<a href="/odoo/res.partner/%d">%s</a>') % (self.id, self.display_name)
         ch = self._fb_channel()
-        if ch:
+        if ch and not self.env.context.get("fb_silent"):
             ch.sudo().message_post(body=Markup("%s: %s") % (link, body), message_type="comment",
                                    subtype_xmlid="mail.mt_comment")
         for user in users or []:
@@ -143,6 +164,9 @@ class ResPartner(models.Model):
         return wiz._reopen()
 
     def action_fb_refresh(self):
+        if len(self) > 1:
+            self._fb_check_batch()
+            return True
         client = self._fb_client()
         for p in self:
             if not p.fb_fnr:
@@ -180,9 +204,25 @@ class ResPartner(models.Model):
 
     @staticmethod
     def _fb_norm_name(n):
-        n = (n or "").lower().replace("gesellschaft m.b.h.", "gmbh").replace("ges.m.b.h.", "gmbh") \
-            .replace("gesellschaft mit beschränkter haftung", "gmbh").replace("g.m.b.h.", "gmbh")
-        return re.sub(r"[^a-z0-9äöüß]", "", n)
+        """Company names compared without spelling variants of the legal form, case, ß/ss, punctuation."""
+        n = (n or "").lower().replace("ß", "ss")
+        for a, b in (("gesellschaft mit beschränkter haftung", "gmbh"), ("gesellschaft m.b.h.", "gmbh"),
+                     ("gesellschaft mbh", "gmbh"), ("ges.m.b.h.", "gmbh"), ("ges.m.b.h", "gmbh"),
+                     ("g.m.b.h.", "gmbh"), ("gesmbh", "gmbh"), ("aktiengesellschaft", "ag"),
+                     ("kommanditgesellschaft", "kg"), ("offene gesellschaft", "og"), ("co.kg", "co kg"),
+                     ("transportgesellschaft", "transport gmbh"), ("gesellschaft", "gmbh")):
+            n = n.replace(a, b)
+        return re.sub(r"[^a-z0-9äöü]", "", n)
+
+    @staticmethod
+    def _fb_same(fname, a, b):
+        """True when two values only differ in spelling (no real change)."""
+        from .bev_address import norm_street
+        if fname == "name":
+            return ResPartner._fb_norm_name(a) == ResPartner._fb_norm_name(b)
+        if fname == "street":
+            return norm_street(a) == norm_street(b)
+        return (a or "").strip().lower() == (b or "").strip().lower()
 
     def _fb_refresh(self, client, accounts=False, new=False, fnr=None, extra=None):
         """Read the current extract, propose changes, check the status (and the latest annual accounts)."""
@@ -214,8 +254,17 @@ class ResPartner(models.Model):
         fill = new and self._fb_param("fill_empty", "True") == "True"
         for fname, key in FIELD_MAP:
             new_v = data.get(key) or ""
+            if isinstance(new_v, list):
+                new_v = ", ".join(new_v)
             if not new_v:
                 continue
+            if (fname == "city" and self.bev_status in ("valid", "house") and self.zip
+                    and (data.get("zip") or "") == self.zip):
+                continue      # town confirmed by the address register (register often abbreviates: "Brunn/Gebirge")
+            if fname == "website":
+                new_v = new_v if new_v.startswith("http") else "https://" + new_v
+                if re.sub(r"^https?://|/$", "", (self.website or "").lower()) == re.sub(r"^https?://|/$", "", new_v.lower()):
+                    continue
             if fname == "company_registry":
                 if normalize_fnr(self.company_registry) == normalize_fnr(new_v):
                     continue
@@ -227,10 +276,11 @@ class ResPartner(models.Model):
                 cur, new_disp, store = self.country_id.name or "", country.name, country.code
             else:
                 cur = self[fname] or ""
-                if cur.strip().lower() == new_v.strip().lower():
+                if self._fb_same(fname, cur, new_v):
                     continue
                 new_disp = store = new_v
-            if fill and not cur:
+            if (fill and not cur) or fname in REGISTER_ONLY:
+                # register-only fields (court, legal form, officers) are always kept up to date directly
                 direct[fname] = country.id if fname == "country_id" else store
             else:
                 lines.append((0, 0, {"field_name": fname, "old_value": cur, "new_value": store,
@@ -252,54 +302,97 @@ class ResPartner(models.Model):
         return False
 
     def _fb_status_vals(self, data):
-        text = " | ".join(data.get("texts") or []).lower()
-        crit = [k for k in _split(self._fb_param("critical_keywords", DEFAULT_CRITICAL)) if k.lower() in text]
+        """Status from the legal facts (insolvency proceedings) and keywords in the valid entries."""
+        notes, level = [], "ok"
+        facts = sorted(data.get("facts") or [], key=lambda f: f.get("date") or "")
+        years = int(self._fb_param("insolvency_years", "3") or 0)
+        limit = (fields.Date.today() - timedelta(days=365 * years)).isoformat() if years else "9999"
+        open_cases, closed = {}, []
+        for f in facts:
+            txt = (f.get("text") or "").lower()
+            if not any(w in txt for w in PROCEEDINGS) and "mangels" not in txt:
+                continue
+            key = f.get("case") or f.get("date")
+            if "mangels" in txt and ("nicht eröffnet" in txt or "nichteröffnung" in txt or "vermögen" in txt):
+                open_cases[key] = f                      # no proceedings for lack of assets: insolvent
+            elif any(w in txt for w in CLOSE_WORDS):
+                start = open_cases.pop(key, None)
+                closed.append((start, f))
+            elif any(w in txt for w in OPEN_WORDS):
+                open_cases[key] = f
+        for f in open_cases.values():
+            level = "critical"
+            notes.append(_("Insolvency: %(t)s (%(d)s, %(c)s)", t=f["text"], d=self._fb_d(f["date"]),
+                           c=", ".join(filter(None, [f.get("case"), f.get("court")]))))
+        for start, f in closed:
+            if (f.get("date") or "") >= limit:
+                level = "warning" if level == "ok" else level
+                notes.append(_("Former insolvency proceedings: %(s)s - %(t)s (%(d)s)",
+                               s=(start or {}).get("text", ""), t=f["text"], d=self._fb_d(f["date"])))
+        # keywords (e.g. liquidation, dissolution) in the valid register entries and recent legal facts
+        text = " | ".join((data.get("texts") or []) + [f["text"] for f in facts if (f.get("date") or "") >= limit]).lower()
+        crit = [k for k in _split(self._fb_param("critical_keywords", DEFAULT_CRITICAL))
+                if k.lower() in text and k.lower() not in PROCEEDINGS]
         warn = [k for k in _split(self._fb_param("warning_keywords", DEFAULT_WARNING)) if k.lower() in text]
-        notes = []
-        if crit:
+        if crit and not open_cases:
+            level = "critical"
             notes.append(_("Register entry mentions: %s") % ", ".join(crit))
         if warn:
+            level = "warning" if level == "ok" else level
             notes.append(_("Register entry mentions: %s") % ", ".join(warn))
-        level = "critical" if crit else "warning" if warn else "ok"
-        # keep findings from the annual accounts
         acc = [n for n in (self.fb_risk_note or "").split("\n") if n.startswith(_("Annual accounts"))]
         if acc and level == "ok":
             level = "warning"
-        return {"fb_risk": level, "fb_risk_note": "\n".join(notes + acc) or False}
+        return {"fb_risk": level, "fb_risk_note": "\n".join(notes + acc) or False,
+                "fb_facts": "\n".join("%s: %s" % (self._fb_d(f["date"]), f["text"]) for f in facts) or False}
+
+    @staticmethod
+    def _fb_d(iso):
+        return "%s.%s.%s" % (iso[8:10], iso[5:7], iso[:4]) if iso and len(iso) >= 10 else (iso or "")
 
     def _fb_accounts_vals(self, client, fnr, risk, note):
-        """Latest annual accounts filed as XML: equity and result; negative values raise a warning."""
+        """Latest annual accounts filed as XML: balance sheet total, equity (ratio), result, turnover."""
         if self._fb_param("check_accounts", "True") != "True":
             return {}
         docs = [d for d in client.documents(fnr) if d["type_code"] == "48" or "jahresabschluss" in d["type"].lower()]
         xml = sorted([d for d in docs if d["ext"] == "xml" or "xml" in d["content_type"]],
                      key=lambda d: d["date"] or "", reverse=True)
-        if not xml:
-            return {}
         latest = sorted(docs, key=lambda d: d["date"] or "", reverse=True)
         size = next((d["size_class"].upper() for d in latest if d.get("size_class")), "")
-        size_vals = {"fb_size_class": size} if size in dict(SIZE) else {}
+        size_vals = {"fb_size_class": size if size in dict(SIZE) else False} if latest else {}
+        if not xml:
+            return size_vals
         doc = xml[0]
         if doc["key"] == self.fb_accounts_key:
             return size_vals
         _ct, content = client.document(doc["key"])
-        eq, res, total = annual_figures(content, _split(self._fb_param("equity_codes", DEFAULT_EQUITY)),
-                                        _split(self._fb_param("result_codes", DEFAULT_RESULT)),
-                                        _split(self._fb_param("total_codes", DEFAULT_TOTAL)))
+        f = annual_figures(content, _split(self._fb_param("equity_codes", DEFAULT_EQUITY)),
+                           _split(self._fb_param("result_codes", DEFAULT_RESULT)),
+                           _split(self._fb_param("total_codes", DEFAULT_TOTAL)),
+                           _split(self._fb_param("revenue_codes", DEFAULT_REVENUE)))
+        eq, res, total, rev, rev_prev = f["equity"], f["result"], f["total"], f["revenue"], f["revenue_prev"]
+        if f["size_class"].upper() in dict(SIZE):
+            size_vals["fb_size_class"] = f["size_class"].upper()
         ratio = (eq / total * 100.0) if eq is not None and total else None
+        change = ((rev - rev_prev) / abs(rev_prev) * 100.0) if rev is not None and rev_prev else None
         vals = dict(size_vals, fb_accounts_key=doc["key"], fb_accounts_date=doc["date"] or False,
                     fb_equity=eq or 0.0, fb_result=res or 0.0, fb_balance_total=total or 0.0,
-                    fb_equity_ratio=ratio or 0.0)
+                    fb_equity_ratio=ratio or 0.0, fb_revenue=rev or 0.0, fb_revenue_prev=rev_prev or 0.0,
+                    fb_revenue_change=change or 0.0, fb_result_estimated=f["result_estimated"])
         notes = [n for n in (note or "").split("\n") if n and not n.startswith(_("Annual accounts"))]
-        findings = []
+        findings, d = [], self._fb_d(doc["date"])
         if eq is not None and eq < 0:
-            findings.append(_("Annual accounts %s: negative equity") % (doc["date"] or ""))
+            findings.append(_("Annual accounts %s: negative equity") % d)
         min_ratio = float(self._fb_param("equity_ratio_min", "8") or 0)
         if ratio is not None and eq >= 0 and min_ratio and ratio < min_ratio:
             findings.append(_("Annual accounts %(d)s: equity ratio %(r).1f %% below %(m)s %% (cf. § 23 URG)",
-                              d=doc["date"] or "", r=ratio, m=("%g" % min_ratio)))
+                              d=d, r=ratio, m=("%g" % min_ratio)))
         if res is not None and res < 0 and self._fb_param("warn_loss", "True") == "True":
-            findings.append(_("Annual accounts %s: annual loss") % (doc["date"] or ""))
+            findings.append(_("Annual accounts %s: annual loss") % d)
+        drop = float(self._fb_param("revenue_drop", "25") or 0)
+        if change is not None and drop and change <= -drop:
+            findings.append(_("Annual accounts %(d)s: turnover %(c).1f %% compared with the previous year",
+                              d=d, c=change))
         vals["fb_risk_note"] = "\n".join(notes + findings) or False
         if findings and RANK[risk or "unknown"] < RANK["warning"]:
             vals["fb_risk"] = "warning"
@@ -313,6 +406,52 @@ class ResPartner(models.Model):
         users = (self.user_id or self.env.ref("base.user_admin")) if self.fb_risk == "critical" else None
         label = dict(RISK)[self.fb_risk]
         self._fb_notify(Markup("<b>%s</b> - %s") % (label, self.fb_risk_note or ""), users=users)
+
+    def _fb_check_batch(self, accounts=True, title=None):
+        """Check several companies; one summary message in the channel instead of one per company."""
+        client = self._fb_client()
+        Proposal = self.env["firmenbuch.proposal"]
+        before = set(Proposal.search([("partner_id", "in", self.ids), ("state", "=", "pending")]).ids)
+        old_risk = {p.id: p.fb_risk for p in self}
+        errors = []
+        for p in self.filtered(lambda x: x.fb_fnr and x.is_company and not x.parent_id):
+            try:
+                p.with_context(fb_silent=True)._fb_refresh(client, accounts=accounts)
+                self._fb_commit()
+            except FirmenbuchAuthError:
+                raise
+            except FirmenbuchError as e:
+                errors.append((p, str(e)))
+                _logger.info("Business register check %s failed: %s", p.display_name, e)
+        new_props = Proposal.search([("partner_id", "in", self.ids), ("state", "=", "pending"),
+                                     ("id", "not in", list(before))])
+        changed = self.filtered(lambda p: RANK[p.fb_risk] > max(RANK[old_risk[p.id]], RANK["ok"]))
+        ch = self._fb_channel()
+        if ch:
+            def link(p, extra=""):
+                return Markup('<li><a href="/odoo/res.partner/%d">%s</a>%s</li>') % (p.id, p.display_name, extra)
+            body = Markup("<p><b>%s</b></p>") % (title or _("Business register: %s companies checked") % len(self))
+            crit = self.filtered(lambda p: p.fb_risk == "critical")
+            warn = self.filtered(lambda p: p.fb_risk == "warning")
+            if crit:
+                body += Markup("<p>%s</p><ul>%s</ul>") % (_("Critical:"), Markup("").join(
+                    link(p, Markup(" - %s") % (p.fb_risk_note or "")) for p in crit))
+            if warn:
+                body += Markup("<p>%s</p><ul>%s</ul>") % (_("Warning:"), Markup("").join(
+                    link(p, Markup(" - %s") % (p.fb_risk_note or "")) for p in warn))
+            if new_props:
+                body += Markup("<p>%s</p><ul>%s</ul>") % (
+                    _("%s new change proposals:") % len(new_props), Markup("").join(
+                        Markup('<li><a href="/odoo/firmenbuch.proposal/%d">%s</a>: %s</li>')
+                        % (pr.id, pr.partner_id.display_name, ", ".join(pr.line_ids.mapped("field_label")))
+                        for pr in new_props))
+            if errors:
+                body += Markup("<p>%s</p><ul>%s</ul>") % (_("Not checked:"), Markup("").join(
+                    link(p, Markup(" - %s") % e) for p, e in errors))
+            if not (crit or warn or new_props or errors):
+                body += Markup("<p>%s</p>") % _("No findings, no changes.")
+            ch.sudo().message_post(body=body, message_type="comment", subtype_xmlid="mail.mt_comment")
+        return {"checked": len(self), "proposals": new_props, "changed": changed, "errors": errors}
 
     # ------------------------------------------------------------ crons
     def _fb_commit(self):
@@ -353,15 +492,11 @@ class ResPartner(models.Model):
         except FirmenbuchAuthError as e:
             _logger.warning("Business register: %s", e)
             return
-        partners = self.search([("fb_fnr", "!=", False), ("is_company", "=", True), ("parent_id", "=", False)])
-        # documents are reported by register number only (without the check letter)
-        partners = partners.filtered(lambda p: p.fb_fnr in changed or p.fb_fnr.rstrip("abcdefghijklmnopqrstuvwxyz") in docs)
-        for p in partners:
-            try:
-                p._fb_refresh(client, accounts=p.fb_fnr.rstrip("abcdefghijklmnopqrstuvwxyz") in docs)
-                self._fb_commit()
-            except FirmenbuchError as e:
-                _logger.info("Business register check %s failed: %s", p.display_name, e)
+        partners = self.search([("fb_fnr", "in", list(changed | docs)), ("is_company", "=", True),
+                                 ("parent_id", "=", False)])
+        if partners:
+            partners._fb_check_batch(title=_("Business register: %s companies changed in the register")
+                                     % len(partners))
         ICP.set_param(P + "last_monitor", today.isoformat())
         days = int(self._fb_param("recheck_days", "30") or 0)
         if days:
@@ -369,9 +504,5 @@ class ResPartner(models.Model):
                                  "|", ("fb_last_check", "=", False),
                                  ("fb_last_check", "<", fields.Datetime.now() - timedelta(days=days))],
                                 limit=50, order="fb_last_check asc nulls first")
-            for p in stale:
-                try:
-                    p._fb_refresh(client, accounts=True)
-                    self._fb_commit()
-                except FirmenbuchError as e:
-                    _logger.info("Business register check %s failed: %s", p.display_name, e)
+            if stale:
+                stale._fb_check_batch(title=_("Business register: periodic check of %s companies") % len(stale))

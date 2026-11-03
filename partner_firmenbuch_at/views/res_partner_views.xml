@@ -49,6 +49,7 @@
                             <field name="fb_fnr" string="FN (normalised)"/>
                             <field name="fb_court"/>
                             <field name="fb_legal_form"/>
+                            <field name="fb_managers"/>
                             <field name="fb_risk"/>
                             <field name="fb_risk_note"/>
                             <field name="fb_last_check"/>
@@ -61,7 +62,18 @@
                             <field name="fb_equity"/>
                             <field name="fb_equity_ratio" decoration-danger="fb_equity_ratio &lt; 8 and fb_balance_total"/>
                             <field name="fb_result" decoration-danger="fb_result &lt; 0"/>
+                            <field name="fb_result_estimated" invisible="not fb_accounts_date"/>
+                            <field name="fb_revenue" invisible="not fb_revenue"/>
+                            <field name="fb_revenue_prev" invisible="not fb_revenue_prev"/>
+                            <field name="fb_revenue_change" invisible="not fb_revenue_prev"
+                                   decoration-danger="fb_revenue_change &lt; 0" decoration-success="fb_revenue_change &gt; 0"/>
+                            <div colspan="2" class="text-muted small" invisible="fb_revenue or not fb_accounts_date">
+                                Turnover: not published (small companies only file the balance sheet).
+                            </div>
                         </group>
+                    </group>
+                    <group string="Legal facts" invisible="not fb_facts">
+                        <field name="fb_facts" nolabel="1" colspan="2"/>
                     </group>
                 </page>
             </xpath>

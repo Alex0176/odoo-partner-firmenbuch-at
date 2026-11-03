@@ -38,4 +38,4 @@ The tests use canned register answers and a miniature address extract; they need
 
 ## Notes
 
-The register status is derived from keywords in valid register entries and is a hint, not a legal statement. Register data are subject to the JustizOnline terms of re-use; address data are © Österreichisches Adressregister (BEV), shown with the reference date in the settings. Details, including usage, known issues and technical notes, are in the [module README](partner_firmenbuch_at/README.rst). German translation included (`i18n/de.po`).
+The register status is derived from the legal facts and keywords in valid register entries and is a hint, not a legal statement. Register data are subject to the JustizOnline terms of re-use; address data are © Österreichisches Adressregister (BEV), shown with the reference date in the settings. Details, including usage, known issues and technical notes, are in the [module README](partner_firmenbuch_at/README.rst). German translation included (`i18n/de.po`).

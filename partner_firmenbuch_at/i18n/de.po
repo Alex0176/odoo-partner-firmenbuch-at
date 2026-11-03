@@ -6,8 +6,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Odoo Server 19.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-03 12:44+0000\n"
-"PO-Revision-Date: 2026-11-03 12:44+0000\n"
+"POT-Creation-Date: 2026-11-03 15:04+0000\n"
+"PO-Revision-Date: 2026-11-03 15:04+0000\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "Language: de\n"
@@ -194,6 +194,13 @@ msgid ""
 msgstr ""
 "Jahresabschluss %(d)s: Eigenkapitalquote %(r).1f %% unter %(m)s %% (vgl. § "
 "23 URG)"
+
+#. module: partner_firmenbuch_at
+#. odoo-python
+#: code:addons/partner_firmenbuch_at/models/res_partner.py:0
+msgid ""
+"Annual accounts %(d)s: turnover %(c).1f %% compared with the previous year"
+msgstr "Jahresabschluss %(d)s: Umsatz %(c).1f %% gegenüber dem Vorjahr"
 
 #. module: partner_firmenbuch_at
 #. odoo-python
@@ -646,6 +653,12 @@ msgid "Followers (Partners)"
 msgstr ""
 
 #. module: partner_firmenbuch_at
+#. odoo-python
+#: code:addons/partner_firmenbuch_at/models/res_partner.py:0
+msgid "Former insolvency proceedings: %(s)s - %(t)s (%(d)s)"
+msgstr "Früheres Insolvenzverfahren: %(s)s – %(t)s (%(d)s)"
+
+#. module: partner_firmenbuch_at
 #: model_terms:ir.ui.view,arch_db:partner_firmenbuch_at.res_config_settings_view_form
 msgid ""
 "Free personal key of the official BMJ web service (High Value Datasets). "
@@ -710,6 +723,12 @@ msgstr ""
 "nur Straßen je PLZ gespeichert (rund 150.000 Zeilen)."
 
 #. module: partner_firmenbuch_at
+#. odoo-python
+#: code:addons/partner_firmenbuch_at/models/res_partner.py:0
+msgid "Insolvency: %(t)s (%(d)s, %(c)s)"
+msgstr "Insolvenz: %(t)s (%(d)s, %(c)s)"
+
+#. module: partner_firmenbuch_at
 #: model:ir.model.fields,field_description:partner_firmenbuch_at.field_firmenbuch_proposal__message_is_follower
 msgid "Is Follower"
 msgstr ""
@@ -728,6 +747,11 @@ msgstr "Posten Bilanzsumme"
 #: model:ir.model.fields,field_description:partner_firmenbuch_at.field_res_config_settings__firmenbuch_equity_codes
 msgid "Item codes equity"
 msgstr "Posten Eigenkapital"
+
+#. module: partner_firmenbuch_at
+#: model:ir.model.fields,field_description:partner_firmenbuch_at.field_res_config_settings__firmenbuch_revenue_codes
+msgid "Item codes turnover"
+msgstr "Posten Umsatz"
 
 #. module: partner_firmenbuch_at
 #: model_terms:ir.ui.view,arch_db:partner_firmenbuch_at.res_config_settings_view_form
@@ -767,6 +791,17 @@ msgid "Last register check"
 msgstr "Letzte Firmenbuch-Prüfung"
 
 #. module: partner_firmenbuch_at
+#: model_terms:ir.ui.view,arch_db:partner_firmenbuch_at.view_partner_form_firmenbuch
+msgid "Legal facts"
+msgstr "Rechtstatsachen"
+
+#. module: partner_firmenbuch_at
+#: model:ir.model.fields,field_description:partner_firmenbuch_at.field_res_partner__fb_facts
+#: model:ir.model.fields,field_description:partner_firmenbuch_at.field_res_users__fb_facts
+msgid "Legal facts (register)"
+msgstr "Rechtstatsachen (Firmenbuch)"
+
+#. module: partner_firmenbuch_at
 #: model:ir.model.fields,field_description:partner_firmenbuch_at.field_firmenbuch_search_result__legal_form
 msgid "Legal form"
 msgstr "Rechtsform"
@@ -794,6 +829,12 @@ msgid "Look up new companies"
 msgstr "Neue Firmen im Firmenbuch abfragen"
 
 #. module: partner_firmenbuch_at
+#: model:ir.model.fields,field_description:partner_firmenbuch_at.field_res_partner__fb_managers
+#: model:ir.model.fields,field_description:partner_firmenbuch_at.field_res_users__fb_managers
+msgid "Managing directors (register)"
+msgstr "Geschäftsführung (Firmenbuch)"
+
+#. module: partner_firmenbuch_at
 #: model:ir.model.fields.selection,name:partner_firmenbuch_at.selection__res_partner__fb_size_class__m
 msgid "Medium-sized"
 msgstr "Mittelgroß"
@@ -814,7 +855,7 @@ msgid "Messages"
 msgstr ""
 
 #. module: partner_firmenbuch_at
-#: model:ir.model.fields.selection,name:partner_firmenbuch_at.selection__res_partner__fb_size_class__ks
+#: model:ir.model.fields.selection,name:partner_firmenbuch_at.selection__res_partner__fb_size_class__w
 msgid "Micro"
 msgstr "Kleinst"
 
@@ -928,6 +969,13 @@ msgid "Number of messages with delivery error"
 msgstr ""
 
 #. module: partner_firmenbuch_at
+#: model:ir.model.fields,help:partner_firmenbuch_at.field_res_partner__fb_revenue
+#: model:ir.model.fields,help:partner_firmenbuch_at.field_res_users__fb_revenue
+msgid "Only medium-sized and large companies publish their turnover."
+msgstr ""
+"Nur mittelgroße und große Gesellschaften veröffentlichen ihren Umsatz."
+
+#. module: partner_firmenbuch_at
 #. odoo-python
 #: code:addons/partner_firmenbuch_at/models/firmenbuch_proposal.py:0
 msgid "Only proposals to review can be applied."
@@ -979,6 +1027,11 @@ msgstr "Vorschläge und Warnungen werden in diesem Dialog-Kanal gemeldet."
 #: model_terms:ir.ui.view,arch_db:partner_firmenbuch_at.view_firmenbuch_proposal_list
 msgid "Proposed on"
 msgstr "Vorgeschlagen am"
+
+#. module: partner_firmenbuch_at
+#: model:ir.model.fields,field_description:partner_firmenbuch_at.field_firmenbuch_proposal__rating_ids
+msgid "Ratings"
+msgstr ""
 
 #. module: partner_firmenbuch_at
 #: model:ir.model.fields,field_description:partner_firmenbuch_at.field_res_config_settings__bev_revalidate
@@ -1106,6 +1159,12 @@ msgid "Replaced by a newer proposal"
 msgstr "Durch neueren Vorschlag ersetzt"
 
 #. module: partner_firmenbuch_at
+#: model:ir.model.fields,field_description:partner_firmenbuch_at.field_res_partner__fb_result_estimated
+#: model:ir.model.fields,field_description:partner_firmenbuch_at.field_res_users__fb_result_estimated
+msgid "Result derived from the balance sheet"
+msgstr "Ergebnis aus der Bilanz abgeleitet"
+
+#. module: partner_firmenbuch_at
 #: model:ir.model.fields,field_description:partner_firmenbuch_at.field_firmenbuch_search_wizard__result_ids
 msgid "Results"
 msgstr "Ergebnisse"
@@ -1124,6 +1183,11 @@ msgstr "Firmenbuch durchsuchen"
 #: model:ir.model.fields,field_description:partner_firmenbuch_at.field_firmenbuch_search_result__seat
 msgid "Seat"
 msgstr "Sitz"
+
+#. module: partner_firmenbuch_at
+#: model:ir.model.fields,field_description:partner_firmenbuch_at.field_res_config_settings__firmenbuch_insolvency_years
+msgid "Show former insolvency proceedings for (years)"
+msgstr "Frühere Insolvenzverfahren anzeigen für (Jahre)"
 
 #. module: partner_firmenbuch_at
 #: model:ir.model.fields,field_description:partner_firmenbuch_at.field_res_partner__fb_size_class
@@ -1145,6 +1209,16 @@ msgstr ""
 #: model:ir.model.fields.selection,name:partner_firmenbuch_at.selection__res_partner__fb_size_class__k
 msgid "Small"
 msgstr "Klein"
+
+#. module: partner_firmenbuch_at
+#: model:ir.model.fields,help:partner_firmenbuch_at.field_res_partner__fb_result_estimated
+#: model:ir.model.fields,help:partner_firmenbuch_at.field_res_users__fb_result_estimated
+msgid ""
+"Small companies file no profit and loss account; the result is the balance "
+"sheet profit minus the profit carried forward."
+msgstr ""
+"Kleine Gesellschaften reichen keine Gewinn- und Verlustrechnung ein; das "
+"Ergebnis ist der Bilanzgewinn abzüglich Gewinnvortrag."
 
 #. module: partner_firmenbuch_at
 #: model:ir.model.fields,field_description:partner_firmenbuch_at.field_firmenbuch_proposal__source
@@ -1239,6 +1313,31 @@ msgid "To review"
 msgstr "Zu prüfen"
 
 #. module: partner_firmenbuch_at
+#: model:ir.model.fields,field_description:partner_firmenbuch_at.field_res_partner__fb_revenue
+#: model:ir.model.fields,field_description:partner_firmenbuch_at.field_res_users__fb_revenue
+msgid "Turnover"
+msgstr "Umsatz"
+
+#. module: partner_firmenbuch_at
+#: model:ir.model.fields,field_description:partner_firmenbuch_at.field_res_partner__fb_revenue_change
+#: model:ir.model.fields,field_description:partner_firmenbuch_at.field_res_users__fb_revenue_change
+msgid "Turnover change (%)"
+msgstr "Umsatzveränderung (%)"
+
+#. module: partner_firmenbuch_at
+#: model:ir.model.fields,field_description:partner_firmenbuch_at.field_res_partner__fb_revenue_prev
+#: model:ir.model.fields,field_description:partner_firmenbuch_at.field_res_users__fb_revenue_prev
+msgid "Turnover previous year"
+msgstr "Umsatz Vorjahr"
+
+#. module: partner_firmenbuch_at
+#: model_terms:ir.ui.view,arch_db:partner_firmenbuch_at.view_partner_form_firmenbuch
+msgid "Turnover: not published (small companies only file the balance sheet)."
+msgstr ""
+"Umsatz: nicht veröffentlicht (kleine Gesellschaften reichen nur die Bilanz "
+"ein)."
+
+#. module: partner_firmenbuch_at
 #. odoo-python
 #: code:addons/partner_firmenbuch_at/models/bev_address.py:0
 msgid "Unknown Austrian postcode %s."
@@ -1265,6 +1364,11 @@ msgid "Warn on annual loss"
 msgstr "Bei Jahresverlust warnen"
 
 #. module: partner_firmenbuch_at
+#: model:ir.model.fields,field_description:partner_firmenbuch_at.field_res_config_settings__firmenbuch_revenue_drop
+msgid "Warn on turnover drop from (%)"
+msgstr "Warnen bei Umsatzrückgang ab (%)"
+
+#. module: partner_firmenbuch_at
 #: model:ir.model.fields.selection,name:partner_firmenbuch_at.selection__res_partner__fb_risk__warning
 msgid "Warning"
 msgstr "Warnung"
@@ -1286,12 +1390,60 @@ msgstr "X-API-KEY"
 
 #. module: partner_firmenbuch_at
 #. odoo-python
-#: code:addons/partner_firmenbuch_at/models/res_partner.py:0
-msgid "date"
-msgstr ""
-
-#. module: partner_firmenbuch_at
-#. odoo-python
 #: code:addons/partner_firmenbuch_at/models/res_config_settings.py:0
 msgid "not imported yet"
 msgstr "noch nicht importiert"
+
+#. module: partner_firmenbuch_at
+#. odoo-python
+#: code:addons/partner_firmenbuch_at/models/res_partner.py:0
+msgid "%s new change proposals:"
+msgstr "%s neue Änderungsvorschläge:"
+
+#. module: partner_firmenbuch_at
+#. odoo-python
+#: code:addons/partner_firmenbuch_at/models/res_partner.py:0
+msgid "Business register: %s companies changed in the register"
+msgstr "Firmenbuch: %s Firmen im Register geändert"
+
+#. module: partner_firmenbuch_at
+#. odoo-python
+#: code:addons/partner_firmenbuch_at/models/res_partner.py:0
+msgid "Business register: %s companies checked"
+msgstr "Firmenbuch: %s Firmen geprüft"
+
+#. module: partner_firmenbuch_at
+#. odoo-python
+#: code:addons/partner_firmenbuch_at/models/res_partner.py:0
+msgid "Business register: periodic check of %s companies"
+msgstr "Firmenbuch: regelmäßige Prüfung von %s Firmen"
+
+#. module: partner_firmenbuch_at
+#. odoo-python
+#: code:addons/partner_firmenbuch_at/models/res_partner.py:0
+msgid "Critical:"
+msgstr "Kritisch:"
+
+#. module: partner_firmenbuch_at
+#. odoo-python
+#: code:addons/partner_firmenbuch_at/models/res_partner.py:0
+msgid "No findings, no changes."
+msgstr "Keine Auffälligkeiten, keine Änderungen."
+
+#. module: partner_firmenbuch_at
+#. odoo-python
+#: code:addons/partner_firmenbuch_at/models/res_partner.py:0
+msgid "Not checked:"
+msgstr "Nicht geprüft:"
+
+#. module: partner_firmenbuch_at
+#. odoo-python
+#: code:addons/partner_firmenbuch_at/models/res_partner.py:0
+msgid "Warning:"
+msgstr "Warnung:"
+
+#. module: partner_firmenbuch_at
+#. odoo-python
+#: code:addons/partner_firmenbuch_at/models/res_partner.py:0
+msgid "date"
+msgstr "Datum"
