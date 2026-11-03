@@ -62,21 +62,22 @@ def _public_host(host):
     return bool(infos)
 
 
-def _get(url, max_bytes):
-    """GET with size limit; returns bytes or None."""
+def _get(url, max_bytes, truncate=False):
+    """GET with size limit; returns ``(bytes, final_url)`` or ``(None, final_url)``.
+
+    With ``truncate`` the first ``max_bytes`` are returned (enough for the ``<head>`` of a page),
+    otherwise a larger answer is rejected."""
     with requests.get(url, headers={"User-Agent": USER_AGENT, "Accept": "*/*"}, timeout=TIMEOUT,
                       stream=True, allow_redirects=True) as resp:
-        if resp.status_code != 200:
-            return None
-        final = urlparse(resp.url)
-        if not _public_host(final.netloc):
-            return None
+        final = resp.url or url
+        if resp.status_code != 200 or not _public_host(urlparse(final).netloc):
+            return None, final
         data = b""
         for chunk in resp.iter_content(32 * 1024):
             data += chunk
             if len(data) > max_bytes:
-                return None
-        return data
+                return (data[:max_bytes], final) if truncate else (None, final)
+        return data, final
 
 
 def _attrs(tag):
@@ -153,11 +154,13 @@ def fetch_favicon(website):
     try:
         if not _public_host(urlparse(base).netloc):
             return None
-        html = _get(base, MAX_HTML)
+        html, final = _get(base, MAX_HTML, truncate=True)
+        # relative icon links and /favicon.ico belong to the page that actually answered (after redirects)
+        base = homepage(final) or base
         text = html.decode("utf-8", "ignore") if html else ""
         for url in icon_candidates(text, base):
             try:
-                data = _get(url, MAX_ICON)
+                data, _final = _get(url, MAX_ICON)
             except requests.RequestException:
                 continue
             png = to_png(data) if data else None
