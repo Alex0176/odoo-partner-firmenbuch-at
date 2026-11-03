@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!-- Copyright 2026 Biricon IT Services GmbH
+     License LGPL-3.0 or later (https://www.gnu.org/licenses/lgpl). -->
+<odoo>
+    <record id="view_partner_form_firmenbuch" model="ir.ui.view">
+        <field name="name">res.partner.form.firmenbuch</field>
+        <field name="model">res.partner</field>
+        <field name="inherit_id" ref="base.view_partner_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//div[@name='button_box']" position="inside">
+                <button name="action_fb_proposals" type="object" class="oe_stat_button" icon="fa-university"
+                        invisible="not is_company or fb_proposal_count == 0" groups="base.group_partner_manager">
+                    <field name="fb_proposal_count" widget="statinfo" string="Register proposals"/>
+                </button>
+            </xpath>
+            <xpath expr="//div[@name='button_box']" position="after">
+                <div class="alert alert-danger mb-2" role="alert" invisible="fb_risk != 'critical'">
+                    <i class="fa fa-exclamation-triangle me-1" title="Critical"/><b>Business register: critical.</b> 
+                    <field name="fb_risk_note" readonly="1" class="d-inline"/>
+                </div>
+                <div class="alert alert-warning mb-2" role="alert" invisible="fb_risk != 'warning'">
+                    <i class="fa fa-exclamation-circle me-1" title="Warning"/><b>Business register: warning.</b> 
+                    <field name="fb_risk_note" readonly="1" class="d-inline"/>
+                </div>
+            </xpath>
+            <xpath expr="//div[hasclass('o_address_format')]" position="after">
+                <field name="country_code" invisible="1"/>
+                <div class="small mb-2" invisible="bev_status == 'unchecked' or country_code != 'AT'">
+                    <field name="bev_status" widget="badge" nolabel="1"
+                           decoration-success="bev_status == 'valid'" decoration-warning="bev_status in ('house', 'suggest')"
+                           decoration-danger="bev_status == 'invalid'"/>
+                    <field name="bev_message" nolabel="1" class="ms-1 text-muted"/>
+                </div>
+                <button name="action_bev_validate" type="object" string="Check address" icon="fa-map-marker"
+                        class="btn-link p-0 mb-2" invisible="country_code != 'AT' or not street"/>
+            </xpath>
+            <xpath expr="//notebook" position="inside">
+                <page name="firmenbuch" string="Business Register" invisible="not is_company or parent_id">
+                    <div class="mb-3" groups="base.group_partner_manager">
+                        <button name="action_fb_search" type="object" string="Register search" icon="fa-search"
+                                class="btn-secondary me-2"/>
+                        <button name="action_fb_refresh" type="object" string="Check now" icon="fa-refresh"
+                                class="btn-secondary me-2" invisible="not fb_fnr"/>
+                        <a href="https://firmen.wko.at/" target="_blank" class="btn btn-link" role="button">
+                            <i class="fa fa-external-link me-1"/>WKO Firmen A-Z</a>
+                    </div>
+                    <group>
+                        <group string="Register">
+                            <field name="fb_fnr" string="FN (normalised)"/>
+                            <field name="fb_court"/>
+                            <field name="fb_legal_form"/>
+                            <field name="fb_risk"/>
+                            <field name="fb_risk_note"/>
+                            <field name="fb_last_check"/>
+                        </group>
+                        <group string="Last annual accounts">
+                            <field name="fb_currency_id" invisible="1"/>
+                            <field name="fb_accounts_date"/>
+                            <field name="fb_size_class"/>
+                            <field name="fb_balance_total"/>
+                            <field name="fb_equity"/>
+                            <field name="fb_equity_ratio" decoration-danger="fb_equity_ratio &lt; 8 and fb_balance_total"/>
+                            <field name="fb_result" decoration-danger="fb_result &lt; 0"/>
+                        </group>
+                    </group>
+                </page>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_partner_search_firmenbuch" model="ir.ui.view">
+        <field name="name">res.partner.search.firmenbuch</field>
+        <field name="model">res.partner</field>
+        <field name="inherit_id" ref="base.view_res_partner_filter"/>
+        <field name="arch" type="xml">
+            <xpath expr="//filter[@name='inactive']" position="before">
+                <filter string="Register warning" name="fb_risk_warning" domain="[('fb_risk', 'in', ('warning', 'critical'))]"/>
+                <filter string="Register critical" name="fb_risk_critical" domain="[('fb_risk', '=', 'critical')]"/>
+                <filter string="Address not valid" name="bev_invalid" domain="[('bev_status', 'in', ('suggest', 'invalid'))]"/>
+                <filter string="Register proposals" name="fb_proposals" domain="[('fb_proposal_ids.state', '=', 'pending')]"/>
+                <separator/>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_partner_list_firmenbuch" model="ir.ui.view">
+        <field name="name">res.partner.list.firmenbuch</field>
+        <field name="model">res.partner</field>
+        <field name="inherit_id" ref="base.view_partner_tree"/>
+        <field name="arch" type="xml">
+            <xpath expr="//list" position="inside">
+                <field name="fb_risk" optional="show" widget="badge"
+                       decoration-danger="fb_risk == 'critical'" decoration-warning="fb_risk == 'warning'"
+                       decoration-success="fb_risk == 'ok'"/>
+            </xpath>
+        </field>
+    </record>
+</odoo>

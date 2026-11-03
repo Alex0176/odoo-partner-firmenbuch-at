@@ -1,0 +1,1250 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* partner_firmenbuch_at
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-11-03 12:44+0000\n"
+"PO-Revision-Date: 2026-11-03 12:44+0000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: \n"
+
+#. module: partner_firmenbuch_at
+#. odoo-python
+#: code:addons/partner_firmenbuch_at/models/res_partner.py:0
+msgid ""
+"%(n)s matches in the business register for the new company - please choose "
+"the right one with “Register search”."
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#. odoo-python
+#: code:addons/partner_firmenbuch_at/wizard/firmenbuch_search.py:0
+msgid "%s companies found."
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#. odoo-python
+#: code:addons/partner_firmenbuch_at/models/res_partner.py:0
+msgid "%s has no company register number. Use the register search first."
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#: model_terms:ir.ui.view,arch_db:partner_firmenbuch_at.res_config_settings_view_form
+msgid "0 = only on changes"
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#: model_terms:ir.ui.view,arch_db:partner_firmenbuch_at.view_firmenbuch_proposal_form
+msgid "<b>Business register: critical.</b>"
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#: model_terms:ir.ui.view,arch_db:partner_firmenbuch_at.view_firmenbuch_proposal_form
+msgid "<b>Business register: warning.</b>"
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#: model_terms:ir.ui.view,arch_db:partner_firmenbuch_at.view_partner_form_firmenbuch
+msgid ""
+"<i class=\"fa fa-exclamation-circle me-1\" title=\"Warning\"/><b>Business "
+"register: warning.</b>"
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#: model_terms:ir.ui.view,arch_db:partner_firmenbuch_at.view_partner_form_firmenbuch
+msgid ""
+"<i class=\"fa fa-exclamation-triangle me-1\" title=\"Critical\"/><b>Business"
+" register: critical.</b>"
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#: model_terms:ir.ui.view,arch_db:partner_firmenbuch_at.res_config_settings_view_form
+msgid "<i class=\"fa fa-external-link me-1\"/>Apply for a key"
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#: model_terms:ir.ui.view,arch_db:partner_firmenbuch_at.view_partner_form_firmenbuch
+msgid "<i class=\"fa fa-external-link me-1\"/>WKO Firmen A-Z"
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#: model_terms:ir.ui.view,arch_db:partner_firmenbuch_at.res_config_settings_view_form
+msgid "<span> addresses</span>"
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#: model_terms:ir.ui.view,arch_db:partner_firmenbuch_at.res_config_settings_view_form
+msgid "<span> · </span>"
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#: model_terms:ir.ui.view,arch_db:partner_firmenbuch_at.res_config_settings_view_form
+msgid "<span>Reference date: </span>"
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#: model_terms:ir.ui.view,arch_db:partner_firmenbuch_at.view_firmenbuch_search_wizard_form
+msgid "<span>exact</span>"
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#: model:ir.model.fields,field_description:partner_firmenbuch_at.field_res_config_settings__firmenbuch_api_key
+#: model_terms:ir.ui.view,arch_db:partner_firmenbuch_at.res_config_settings_view_form
+msgid "API key"
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#: model:ir.model.fields,field_description:partner_firmenbuch_at.field_firmenbuch_proposal__message_needaction
+msgid "Action Needed"
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#: model:ir.model.fields,field_description:partner_firmenbuch_at.field_res_partner__bev_status
+#: model:ir.model.fields,field_description:partner_firmenbuch_at.field_res_users__bev_status
+#: model:ir.model.fields.selection,name:partner_firmenbuch_at.selection__firmenbuch_proposal__reason__address
+msgid "Address check"
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#: model:ir.model.fields,field_description:partner_firmenbuch_at.field_res_partner__bev_message
+#: model:ir.model.fields,field_description:partner_firmenbuch_at.field_res_users__bev_message
+msgid "Address check result"
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#. odoo-python
+#: code:addons/partner_firmenbuch_at/models/bev_address.py:0
+msgid "Address found in the Austrian address register."
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#: model_terms:ir.ui.view,arch_db:partner_firmenbuch_at.view_partner_search_firmenbuch
+msgid "Address not valid"
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#. odoo-python
+#: code:addons/partner_firmenbuch_at/models/res_config_settings.py:0
+#: model_terms:ir.ui.view,arch_db:partner_firmenbuch_at.view_firmenbuch_proposal_search
+msgid "Address register"
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#: model:ir.model.fields.selection,name:partner_firmenbuch_at.selection__firmenbuch_proposal__source__address
+msgid "Address register (BEV)"
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#: model:ir.actions.server,name:partner_firmenbuch_at.ir_cron_bev_update_ir_actions_server
+msgid "Address register (BEV): update"
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#. odoo-python
+#: code:addons/partner_firmenbuch_at/models/res_partner_bev.py:0
+msgid ""
+"Address register updated (%(attr)s). Checked: %(n)s addresses - valid %(v)s,"
+" house number unknown %(h)s, not found %(i)s. <b>%(p)s new correction "
+"proposals</b> (Contacts → Business Register → Proposals)."
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#: model:ir.model.fields,field_description:partner_firmenbuch_at.field_res_config_settings__bev_count
+msgid "Addresses loaded"
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#: model_terms:ir.ui.view,arch_db:partner_firmenbuch_at.res_config_settings_view_form
+msgid ""
+"After a new reference date has been loaded, all Austrian addresses are "
+"checked again; one summary message is posted."
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#. odoo-python
+#: code:addons/partner_firmenbuch_at/models/res_partner.py:0
+msgid "Annual accounts"
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#. odoo-python
+#: code:addons/partner_firmenbuch_at/models/res_partner.py:0
+msgid ""
+"Annual accounts %(d)s: equity ratio %(r).1f %% below %(m)s %% (cf. § 23 URG)"
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#. odoo-python
+#: code:addons/partner_firmenbuch_at/models/res_partner.py:0
+msgid "Annual accounts %s: annual loss"
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#. odoo-python
+#: code:addons/partner_firmenbuch_at/models/res_partner.py:0
+msgid "Annual accounts %s: negative equity"
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#: model_terms:ir.ui.view,arch_db:partner_firmenbuch_at.res_config_settings_view_form
+msgid "Annual accounts item codes"
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#: model:ir.model.fields,field_description:partner_firmenbuch_at.field_res_partner__fb_result
+#: model:ir.model.fields,field_description:partner_firmenbuch_at.field_res_users__fb_result
+msgid "Annual result (last annual accounts)"
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#: model:ir.model.fields.selection,name:partner_firmenbuch_at.selection__firmenbuch_proposal__state__applied
+msgid "Applied"
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#: model:ir.model.fields,field_description:partner_firmenbuch_at.field_firmenbuch_proposal_line__apply
+msgid "Apply"
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#: model_terms:ir.ui.view,arch_db:partner_firmenbuch_at.view_firmenbuch_proposal_form
+msgid "Apply selected"
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#: model:ir.model.fields,field_description:partner_firmenbuch_at.field_firmenbuch_proposal__message_attachment_count
+msgid "Attachment Count"
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#: model:ir.model.fields,field_description:partner_firmenbuch_at.field_res_config_settings__bev_attribution
+msgid "Attribution"
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#: model:ir.model,name:partner_firmenbuch_at.model_bev_register
+#: model_terms:ir.ui.view,arch_db:partner_firmenbuch_at.res_config_settings_view_form
+msgid "Austrian address register (BEV)"
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#: model_terms:ir.ui.view,arch_db:partner_firmenbuch_at.res_config_settings_view_form
+msgid ""
+"Austrian addresses are checked against the official address register of the "
+"BEV (open data, updated twice a year). Corrections are proposed and reported"
+" in the notification channel."
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#: model_terms:ir.ui.view,arch_db:partner_firmenbuch_at.res_config_settings_view_form
+msgid "Austrian business register (Firmenbuch)"
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#: model_terms:ir.ui.view,arch_db:partner_firmenbuch_at.res_config_settings_view_form
+msgid ""
+"Austrian companies (or companies without country) are searched in the "
+"register right after they are created."
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#: model:ir.model,name:partner_firmenbuch_at.model_bev_address
+msgid "BEV address"
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#: model:ir.model,name:partner_firmenbuch_at.model_bev_locality
+msgid "BEV locality (Ortschaft)"
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#: model:ir.model,name:partner_firmenbuch_at.model_bev_street
+msgid "BEV street"
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#: model:ir.model.fields,field_description:partner_firmenbuch_at.field_res_partner__fb_accounts_date
+#: model:ir.model.fields,field_description:partner_firmenbuch_at.field_res_users__fb_accounts_date
+msgid "Balance sheet date"
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#: model:ir.model.fields,field_description:partner_firmenbuch_at.field_res_partner__fb_balance_total
+#: model:ir.model.fields,field_description:partner_firmenbuch_at.field_res_users__fb_balance_total
+msgid "Balance sheet total"
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#: model:ir.ui.menu,name:partner_firmenbuch_at.menu_firmenbuch
+#: model_terms:ir.ui.view,arch_db:partner_firmenbuch_at.res_config_settings_view_form
+#: model_terms:ir.ui.view,arch_db:partner_firmenbuch_at.view_partner_form_firmenbuch
+msgid "Business Register"
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#. odoo-python
+#: code:addons/partner_firmenbuch_at/models/res_config_settings.py:0
+#: model:ir.model.fields.selection,name:partner_firmenbuch_at.selection__firmenbuch_proposal__source__register
+#: model_terms:ir.ui.view,arch_db:partner_firmenbuch_at.view_firmenbuch_proposal_search
+msgid "Business register"
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#: model:ir.model,name:partner_firmenbuch_at.model_firmenbuch_proposal
+msgid "Business register change proposal"
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#: model:ir.model,name:partner_firmenbuch_at.model_firmenbuch_proposal_line
+msgid "Business register change proposal line"
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#. odoo-python
+#: code:addons/partner_firmenbuch_at/wizard/firmenbuch_search.py:0
+#: model_terms:ir.ui.view,arch_db:partner_firmenbuch_at.view_firmenbuch_proposal_form
+msgid "Business register proposal"
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#: model:ir.actions.act_window,name:partner_firmenbuch_at.action_firmenbuch_proposal
+#: model:ir.ui.menu,name:partner_firmenbuch_at.menu_firmenbuch_proposal
+msgid "Business register proposals"
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#. odoo-python
+#: code:addons/partner_firmenbuch_at/wizard/firmenbuch_search.py:0
+#: model_terms:ir.ui.view,arch_db:partner_firmenbuch_at.view_firmenbuch_search_wizard_form
+msgid "Business register search"
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#: model:ir.model,name:partner_firmenbuch_at.model_firmenbuch_search_result
+msgid "Business register search result"
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#. odoo-python
+#: code:addons/partner_firmenbuch_at/models/res_partner.py:0
+msgid "Business register: check customer"
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#: model:ir.actions.server,name:partner_firmenbuch_at.ir_cron_firmenbuch_pending_ir_actions_server
+msgid "Business register: look up new companies"
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#: model:ir.actions.server,name:partner_firmenbuch_at.ir_cron_firmenbuch_monitor_ir_actions_server
+msgid "Business register: monitor companies"
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#: model_terms:ir.ui.view,arch_db:partner_firmenbuch_at.res_config_settings_view_form
+msgid ""
+"By default only new contacts and the summary after an update are reported in"
+" the chat; corrections are always proposed."
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#: model:ir.model.fields.selection,name:partner_firmenbuch_at.selection__firmenbuch_proposal__reason__change
+msgid "Change in the register"
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#: model:ir.model.fields,field_description:partner_firmenbuch_at.field_firmenbuch_proposal__line_ids
+msgid "Changes"
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#: model:ir.model.fields,field_description:partner_firmenbuch_at.field_res_config_settings__bev_notify_changes
+msgid "Chat message also when an address is edited"
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#: model_terms:ir.ui.view,arch_db:partner_firmenbuch_at.view_partner_form_firmenbuch
+msgid "Check address"
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#: model:ir.model.fields,field_description:partner_firmenbuch_at.field_res_config_settings__bev_house_numbers
+msgid "Check house numbers"
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#: model_terms:ir.ui.view,arch_db:partner_firmenbuch_at.view_partner_form_firmenbuch
+msgid "Check now"
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#: model_terms:ir.ui.view,arch_db:partner_firmenbuch_at.view_firmenbuch_search_wizard_form
+msgid "Choose"
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#: model_terms:ir.ui.view,arch_db:partner_firmenbuch_at.view_firmenbuch_search_wizard_form
+msgid "Close"
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#: model_terms:ir.ui.view,arch_db:partner_firmenbuch_at.res_config_settings_view_form
+msgid ""
+"Comma separated. Found in a valid register entry, they set the status to "
+"critical or warning."
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#: model:ir.model.fields,field_description:partner_firmenbuch_at.field_firmenbuch_proposal__partner_id
+#: model:ir.model.fields,field_description:partner_firmenbuch_at.field_firmenbuch_search_result__name
+msgid "Company"
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#: model:ir.model.fields,field_description:partner_firmenbuch_at.field_firmenbuch_search_wizard__query
+msgid "Company name"
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#: model:ir.model.fields,field_description:partner_firmenbuch_at.field_res_config_settings__firmenbuch_fill_empty
+msgid "Complete empty fields of new companies automatically"
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#. odoo-python
+#: code:addons/partner_firmenbuch_at/models/res_partner.py:0
+msgid "Completed from the Austrian business register: %s"
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#: model:ir.model,name:partner_firmenbuch_at.model_res_config_settings
+msgid "Config Settings"
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#. odoo-python
+#: code:addons/partner_firmenbuch_at/models/res_config_settings.py:0
+msgid "Connection test failed: %s"
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#. odoo-python
+#: code:addons/partner_firmenbuch_at/models/res_config_settings.py:0
+msgid "Connection works (%s companies found)."
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#: model:ir.model,name:partner_firmenbuch_at.model_res_partner
+msgid "Contact"
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#: model:ir.model.fields.selection,name:partner_firmenbuch_at.selection__res_partner__bev_status__suggest
+msgid "Correction proposed"
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#: model:ir.model.fields,field_description:partner_firmenbuch_at.field_firmenbuch_search_result__court
+msgid "Court"
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#: model:ir.model.fields,field_description:partner_firmenbuch_at.field_firmenbuch_proposal__create_uid
+#: model:ir.model.fields,field_description:partner_firmenbuch_at.field_firmenbuch_proposal_line__create_uid
+#: model:ir.model.fields,field_description:partner_firmenbuch_at.field_firmenbuch_search_result__create_uid
+#: model:ir.model.fields,field_description:partner_firmenbuch_at.field_firmenbuch_search_wizard__create_uid
+msgid "Created by"
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#: model:ir.model.fields,field_description:partner_firmenbuch_at.field_firmenbuch_proposal__create_date
+#: model:ir.model.fields,field_description:partner_firmenbuch_at.field_firmenbuch_proposal_line__create_date
+#: model:ir.model.fields,field_description:partner_firmenbuch_at.field_firmenbuch_search_result__create_date
+#: model:ir.model.fields,field_description:partner_firmenbuch_at.field_firmenbuch_search_wizard__create_date
+msgid "Created on"
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#: model:ir.model.fields.selection,name:partner_firmenbuch_at.selection__res_partner__fb_risk__critical
+msgid "Critical"
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#: model:ir.model.fields,field_description:partner_firmenbuch_at.field_res_config_settings__firmenbuch_critical_keywords
+msgid "Critical keywords"
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#: model:ir.model.fields,field_description:partner_firmenbuch_at.field_firmenbuch_proposal_line__old_value
+msgid "Current value"
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#. odoo-python
+#: code:addons/partner_firmenbuch_at/models/firmenbuch_proposal.py:0
+msgid "Data taken over from the Austrian address register: %s"
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#. odoo-python
+#: code:addons/partner_firmenbuch_at/models/firmenbuch_proposal.py:0
+msgid "Data taken over from the Austrian business register: %s"
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#: model:ir.model.fields,field_description:partner_firmenbuch_at.field_bev_address__display_name
+#: model:ir.model.fields,field_description:partner_firmenbuch_at.field_bev_locality__display_name
+#: model:ir.model.fields,field_description:partner_firmenbuch_at.field_bev_register__display_name
+#: model:ir.model.fields,field_description:partner_firmenbuch_at.field_bev_street__display_name
+#: model:ir.model.fields,field_description:partner_firmenbuch_at.field_firmenbuch_proposal__display_name
+#: model:ir.model.fields,field_description:partner_firmenbuch_at.field_firmenbuch_proposal_line__display_name
+#: model:ir.model.fields,field_description:partner_firmenbuch_at.field_firmenbuch_search_result__display_name
+#: model:ir.model.fields,field_description:partner_firmenbuch_at.field_firmenbuch_search_wizard__display_name
+#: model:ir.model.fields,field_description:partner_firmenbuch_at.field_res_config_settings__display_name
+#: model:ir.model.fields,field_description:partner_firmenbuch_at.field_res_partner__display_name
+msgid "Display Name"
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#: model_terms:ir.ui.view,arch_db:partner_firmenbuch_at.res_config_settings_view_form
+msgid ""
+"Element names / codes in the XML annual accounts (comma separated, first "
+"found wins)."
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#: model_terms:ir.ui.view,arch_db:partner_firmenbuch_at.res_config_settings_view_form
+msgid ""
+"Empty fields (address, register number, court, legal form) are filled in "
+"directly; differing values are always proposed."
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#: model:ir.model.fields,field_description:partner_firmenbuch_at.field_res_partner__fb_equity
+#: model:ir.model.fields,field_description:partner_firmenbuch_at.field_res_users__fb_equity
+msgid "Equity (last annual accounts)"
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#: model:ir.model.fields,field_description:partner_firmenbuch_at.field_res_partner__fb_equity_ratio
+#: model:ir.model.fields,field_description:partner_firmenbuch_at.field_res_users__fb_equity_ratio
+msgid "Equity ratio (%)"
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#: model:ir.model.fields,field_description:partner_firmenbuch_at.field_res_config_settings__firmenbuch_check_accounts
+msgid "Evaluate annual accounts"
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#: model_terms:ir.ui.view,arch_db:partner_firmenbuch_at.res_config_settings_view_form
+msgid ""
+"Every night the register is asked which companies changed; known partners "
+"are checked again and changes proposed."
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#: model:ir.model.fields,field_description:partner_firmenbuch_at.field_firmenbuch_search_wizard__exact
+msgid "Exact match"
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#: model_terms:ir.ui.view,arch_db:partner_firmenbuch_at.view_partner_form_firmenbuch
+msgid "FN (normalised)"
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#: model:ir.model.fields,field_description:partner_firmenbuch_at.field_res_partner__fb_accounts_key
+#: model:ir.model.fields,field_description:partner_firmenbuch_at.field_res_users__fb_accounts_key
+msgid "Fb Accounts Key"
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#: model:ir.model.fields,field_description:partner_firmenbuch_at.field_res_partner__fb_checksum
+#: model:ir.model.fields,field_description:partner_firmenbuch_at.field_res_users__fb_checksum
+msgid "Fb Checksum"
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#: model:ir.model.fields,field_description:partner_firmenbuch_at.field_res_partner__fb_currency_id
+#: model:ir.model.fields,field_description:partner_firmenbuch_at.field_res_users__fb_currency_id
+msgid "Fb Currency"
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#: model:ir.model.fields,field_description:partner_firmenbuch_at.field_res_partner__fb_lookup_pending
+#: model:ir.model.fields,field_description:partner_firmenbuch_at.field_res_users__fb_lookup_pending
+msgid "Fb Lookup Pending"
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#: model:ir.model.fields,field_description:partner_firmenbuch_at.field_res_partner__fb_proposal_count
+#: model:ir.model.fields,field_description:partner_firmenbuch_at.field_res_users__fb_proposal_count
+msgid "Fb Proposal Count"
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#: model:ir.model.fields,field_description:partner_firmenbuch_at.field_firmenbuch_proposal_line__field_label
+msgid "Field"
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#: model:ir.model.fields,field_description:partner_firmenbuch_at.field_firmenbuch_proposal_line__field_name
+msgid "Field Name"
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#: model_terms:ir.ui.view,arch_db:partner_firmenbuch_at.res_config_settings_view_form
+msgid "Firmenbuch"
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#: model:ir.model.fields,field_description:partner_firmenbuch_at.field_firmenbuch_proposal__message_follower_ids
+msgid "Followers"
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#: model:ir.model.fields,field_description:partner_firmenbuch_at.field_firmenbuch_proposal__message_partner_ids
+msgid "Followers (Partners)"
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#: model_terms:ir.ui.view,arch_db:partner_firmenbuch_at.res_config_settings_view_form
+msgid ""
+"Free personal key of the official BMJ web service (High Value Datasets). "
+"Apply with ID Austria on JustizOnline → Informationsweiterverwendung → API "
+"“FBW”."
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#: model:ir.model.fields,field_description:partner_firmenbuch_at.field_res_config_settings__firmenbuch_recheck_days
+msgid "Full re-check every (days)"
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#: model:ir.model.fields,field_description:partner_firmenbuch_at.field_firmenbuch_proposal__has_message
+msgid "Has Message"
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#: model:ir.model.fields,field_description:partner_firmenbuch_at.field_bev_address__house_number
+msgid "House number"
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#: model:ir.model.fields.selection,name:partner_firmenbuch_at.selection__res_partner__bev_status__house
+msgid "House number unknown"
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#: model:ir.model.fields,field_description:partner_firmenbuch_at.field_bev_address__id
+#: model:ir.model.fields,field_description:partner_firmenbuch_at.field_bev_locality__id
+#: model:ir.model.fields,field_description:partner_firmenbuch_at.field_bev_register__id
+#: model:ir.model.fields,field_description:partner_firmenbuch_at.field_bev_street__id
+#: model:ir.model.fields,field_description:partner_firmenbuch_at.field_firmenbuch_proposal__id
+#: model:ir.model.fields,field_description:partner_firmenbuch_at.field_firmenbuch_proposal_line__id
+#: model:ir.model.fields,field_description:partner_firmenbuch_at.field_firmenbuch_search_result__id
+#: model:ir.model.fields,field_description:partner_firmenbuch_at.field_firmenbuch_search_wizard__id
+#: model:ir.model.fields,field_description:partner_firmenbuch_at.field_res_config_settings__id
+#: model:ir.model.fields,field_description:partner_firmenbuch_at.field_res_partner__id
+msgid "ID"
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#: model:ir.model.fields,help:partner_firmenbuch_at.field_firmenbuch_proposal__message_needaction
+msgid "If checked, new messages require your attention."
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#: model:ir.model.fields,help:partner_firmenbuch_at.field_firmenbuch_proposal__message_has_error
+msgid "If checked, some messages have a delivery error."
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#: model_terms:ir.ui.view,arch_db:partner_firmenbuch_at.res_config_settings_view_form
+msgid ""
+"Imports every house number (about 2.5 million rows). Without, only streets "
+"per postcode are kept (about 150,000 rows)."
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#: model:ir.model.fields,field_description:partner_firmenbuch_at.field_firmenbuch_proposal__message_is_follower
+msgid "Is Follower"
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#: model:ir.model.fields,field_description:partner_firmenbuch_at.field_res_config_settings__firmenbuch_result_codes
+msgid "Item codes annual result"
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#: model:ir.model.fields,field_description:partner_firmenbuch_at.field_res_config_settings__firmenbuch_total_codes
+msgid "Item codes balance sheet total"
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#: model:ir.model.fields,field_description:partner_firmenbuch_at.field_res_config_settings__firmenbuch_equity_codes
+msgid "Item codes equity"
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#: model_terms:ir.ui.view,arch_db:partner_firmenbuch_at.res_config_settings_view_form
+msgid "Keywords"
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#: model:ir.model.fields.selection,name:partner_firmenbuch_at.selection__res_partner__fb_size_class__g
+msgid "Large"
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#: model:ir.model.fields,field_description:partner_firmenbuch_at.field_firmenbuch_proposal__write_uid
+#: model:ir.model.fields,field_description:partner_firmenbuch_at.field_firmenbuch_proposal_line__write_uid
+#: model:ir.model.fields,field_description:partner_firmenbuch_at.field_firmenbuch_search_result__write_uid
+#: model:ir.model.fields,field_description:partner_firmenbuch_at.field_firmenbuch_search_wizard__write_uid
+msgid "Last Updated by"
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#: model:ir.model.fields,field_description:partner_firmenbuch_at.field_firmenbuch_proposal__write_date
+#: model:ir.model.fields,field_description:partner_firmenbuch_at.field_firmenbuch_proposal_line__write_date
+#: model:ir.model.fields,field_description:partner_firmenbuch_at.field_firmenbuch_search_result__write_date
+#: model:ir.model.fields,field_description:partner_firmenbuch_at.field_firmenbuch_search_wizard__write_date
+msgid "Last Updated on"
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#: model_terms:ir.ui.view,arch_db:partner_firmenbuch_at.view_partner_form_firmenbuch
+msgid "Last annual accounts"
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#: model:ir.model.fields,field_description:partner_firmenbuch_at.field_res_partner__fb_last_check
+#: model:ir.model.fields,field_description:partner_firmenbuch_at.field_res_users__fb_last_check
+msgid "Last register check"
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#: model:ir.model.fields,field_description:partner_firmenbuch_at.field_firmenbuch_search_result__legal_form
+msgid "Legal form"
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#: model:ir.model.fields,field_description:partner_firmenbuch_at.field_res_partner__fb_legal_form
+#: model:ir.model.fields,field_description:partner_firmenbuch_at.field_res_users__fb_legal_form
+msgid "Legal form (register)"
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#: model:ir.model.fields,field_description:partner_firmenbuch_at.field_bev_locality__name
+msgid "Locality"
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#: model:ir.model.fields,field_description:partner_firmenbuch_at.field_bev_address__okz
+#: model:ir.model.fields,field_description:partner_firmenbuch_at.field_bev_locality__okz
+msgid "Locality code"
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#: model:ir.model.fields,field_description:partner_firmenbuch_at.field_res_config_settings__firmenbuch_auto_lookup
+msgid "Look up new companies"
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#: model:ir.model.fields.selection,name:partner_firmenbuch_at.selection__res_partner__fb_size_class__m
+msgid "Medium-sized"
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#: model:ir.model.fields,field_description:partner_firmenbuch_at.field_firmenbuch_search_wizard__message
+msgid "Message"
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#: model:ir.model.fields,field_description:partner_firmenbuch_at.field_firmenbuch_proposal__message_has_error
+msgid "Message Delivery error"
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#: model:ir.model.fields,field_description:partner_firmenbuch_at.field_firmenbuch_proposal__message_ids
+msgid "Messages"
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#: model:ir.model.fields.selection,name:partner_firmenbuch_at.selection__res_partner__fb_size_class__ks
+msgid "Micro"
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#: model:ir.model.fields,field_description:partner_firmenbuch_at.field_res_config_settings__firmenbuch_equity_ratio_min
+msgid "Minimum equity ratio (%)"
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#: model:ir.model.fields,field_description:partner_firmenbuch_at.field_res_config_settings__firmenbuch_monitor
+msgid "Monitor companies daily"
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#: model_terms:ir.ui.view,arch_db:partner_firmenbuch_at.res_config_settings_view_form
+msgid "Monitoring"
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#: model:ir.model.fields,field_description:partner_firmenbuch_at.field_bev_locality__municipality
+msgid "Municipality"
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#: model:ir.model.fields,field_description:partner_firmenbuch_at.field_bev_address__gkz
+#: model:ir.model.fields,field_description:partner_firmenbuch_at.field_bev_locality__gkz
+#: model:ir.model.fields,field_description:partner_firmenbuch_at.field_bev_street__gkz
+msgid "Municipality code"
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#: model:ir.model.fields,field_description:partner_firmenbuch_at.field_firmenbuch_proposal__name
+msgid "Name"
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#: model:ir.model.fields,field_description:partner_firmenbuch_at.field_bev_locality__name_norm
+#: model:ir.model.fields,field_description:partner_firmenbuch_at.field_bev_street__name_norm
+msgid "Name Norm"
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#: model_terms:ir.ui.view,arch_db:partner_firmenbuch_at.res_config_settings_view_form
+#: model_terms:ir.ui.view,arch_db:partner_firmenbuch_at.view_firmenbuch_proposal_search
+msgid "New companies"
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#: model:ir.model.fields.selection,name:partner_firmenbuch_at.selection__firmenbuch_proposal__reason__new
+msgid "New company"
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#. odoo-python
+#: code:addons/partner_firmenbuch_at/models/bev_address.py:0
+msgid "No address register extract found in the BEV download service."
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#. odoo-python
+#: code:addons/partner_firmenbuch_at/wizard/firmenbuch_search.py:0
+msgid "No company found."
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#: model:ir.model.fields.selection,name:partner_firmenbuch_at.selection__res_partner__fb_risk__ok
+msgid "No findings"
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#. odoo-python
+#: code:addons/partner_firmenbuch_at/models/bev_address.py:0
+msgid "No street given."
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#: model:ir.model.fields.selection,name:partner_firmenbuch_at.selection__res_partner__bev_status__unchecked
+#: model:ir.model.fields.selection,name:partner_firmenbuch_at.selection__res_partner__fb_risk__unknown
+msgid "Not checked"
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#: model:ir.model.fields.selection,name:partner_firmenbuch_at.selection__res_partner__bev_status__invalid
+msgid "Not found"
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#: model:ir.model.fields,field_description:partner_firmenbuch_at.field_res_config_settings__firmenbuch_channel_id
+#: model_terms:ir.ui.view,arch_db:partner_firmenbuch_at.res_config_settings_view_form
+msgid "Notification channel"
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#: model:ir.model.fields,field_description:partner_firmenbuch_at.field_firmenbuch_proposal__message_needaction_counter
+msgid "Number of Actions"
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#: model:ir.model.fields,field_description:partner_firmenbuch_at.field_firmenbuch_proposal__message_has_error_counter
+msgid "Number of errors"
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#: model:ir.model.fields,help:partner_firmenbuch_at.field_firmenbuch_proposal__message_needaction_counter
+msgid "Number of messages requiring action"
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#: model:ir.model.fields,help:partner_firmenbuch_at.field_firmenbuch_proposal__message_has_error_counter
+msgid "Number of messages with delivery error"
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#. odoo-python
+#: code:addons/partner_firmenbuch_at/models/firmenbuch_proposal.py:0
+msgid "Only proposals to review can be applied."
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#: model:ir.model.fields,field_description:partner_firmenbuch_at.field_firmenbuch_search_wizard__partner_id
+msgid "Partner"
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#. odoo-python
+#: code:addons/partner_firmenbuch_at/models/res_partner.py:0
+msgid ""
+"Please enter the API key of the Austrian business register in Settings → "
+"Business Register (free of charge, see the module description)."
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#: model:ir.model.fields,field_description:partner_firmenbuch_at.field_bev_street__postal_place
+msgid "Postal place (Zustellort)"
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#: model:ir.model.fields,field_description:partner_firmenbuch_at.field_bev_address__zip
+msgid "Postcode"
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#. odoo-python
+#: code:addons/partner_firmenbuch_at/models/bev_address.py:0
+msgid "Postcode does not match the street."
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#: model:ir.model.fields,field_description:partner_firmenbuch_at.field_firmenbuch_proposal_line__proposal_id
+msgid "Proposal"
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#: model_terms:ir.ui.view,arch_db:partner_firmenbuch_at.res_config_settings_view_form
+msgid "Proposals and warnings are posted in this Discuss channel."
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#: model_terms:ir.ui.view,arch_db:partner_firmenbuch_at.view_firmenbuch_proposal_form
+#: model_terms:ir.ui.view,arch_db:partner_firmenbuch_at.view_firmenbuch_proposal_list
+msgid "Proposed on"
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#: model:ir.model.fields,field_description:partner_firmenbuch_at.field_res_config_settings__bev_revalidate
+msgid "Re-check all addresses after an update"
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#: model_terms:ir.ui.view,arch_db:partner_firmenbuch_at.res_config_settings_view_form
+msgid ""
+"Reads the latest annual accounts filed as XML; negative equity (and "
+"optionally a loss) triggers a warning."
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#: model:ir.model.fields,field_description:partner_firmenbuch_at.field_firmenbuch_proposal__reason
+msgid "Reason"
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#: model:ir.model.fields,field_description:partner_firmenbuch_at.field_res_config_settings__bev_stichtag
+msgid "Reference date"
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#: model_terms:ir.ui.view,arch_db:partner_firmenbuch_at.view_partner_form_firmenbuch
+msgid "Register"
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#: model:ir.model.fields,field_description:partner_firmenbuch_at.field_res_partner__fb_court
+#: model:ir.model.fields,field_description:partner_firmenbuch_at.field_res_users__fb_court
+msgid "Register court"
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#: model_terms:ir.ui.view,arch_db:partner_firmenbuch_at.view_partner_search_firmenbuch
+msgid "Register critical"
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#. odoo-python
+#: code:addons/partner_firmenbuch_at/models/res_partner.py:0
+msgid "Register entry mentions: %s"
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#: model:ir.model.fields,field_description:partner_firmenbuch_at.field_firmenbuch_proposal__risk_note
+#: model:ir.model.fields,field_description:partner_firmenbuch_at.field_res_partner__fb_risk_note
+#: model:ir.model.fields,field_description:partner_firmenbuch_at.field_res_users__fb_risk_note
+msgid "Register findings"
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#: model:ir.model.fields,field_description:partner_firmenbuch_at.field_firmenbuch_search_result__fnr
+msgid "Register no."
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#: model:ir.model.fields,field_description:partner_firmenbuch_at.field_firmenbuch_proposal__fnr
+msgid "Register number"
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#: model:ir.model.fields,field_description:partner_firmenbuch_at.field_res_partner__fb_fnr
+#: model:ir.model.fields,field_description:partner_firmenbuch_at.field_res_users__fb_fnr
+msgid "Register number (normalised)"
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#: model:ir.model.fields,field_description:partner_firmenbuch_at.field_res_partner__fb_proposal_ids
+#: model:ir.model.fields,field_description:partner_firmenbuch_at.field_res_users__fb_proposal_ids
+#: model_terms:ir.ui.view,arch_db:partner_firmenbuch_at.view_partner_form_firmenbuch
+#: model_terms:ir.ui.view,arch_db:partner_firmenbuch_at.view_partner_search_firmenbuch
+msgid "Register proposals"
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#: model_terms:ir.ui.view,arch_db:partner_firmenbuch_at.view_partner_form_firmenbuch
+msgid "Register search"
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#: model:ir.model.fields,field_description:partner_firmenbuch_at.field_firmenbuch_proposal__risk
+#: model:ir.model.fields,field_description:partner_firmenbuch_at.field_res_partner__fb_risk
+#: model:ir.model.fields,field_description:partner_firmenbuch_at.field_res_users__fb_risk
+msgid "Register status"
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#: model:ir.model.fields,field_description:partner_firmenbuch_at.field_firmenbuch_proposal_line__new_display
+msgid "Register value"
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#: model:ir.model.fields,field_description:partner_firmenbuch_at.field_firmenbuch_proposal_line__new_value
+msgid "Register value (stored)"
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#: model_terms:ir.ui.view,arch_db:partner_firmenbuch_at.view_partner_search_firmenbuch
+msgid "Register warning"
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#: model:ir.actions.act_window,name:partner_firmenbuch_at.action_partner_firmenbuch_risk
+#: model:ir.ui.menu,name:partner_firmenbuch_at.menu_firmenbuch_risk
+msgid "Register warnings"
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#: model_terms:ir.ui.view,arch_db:partner_firmenbuch_at.view_firmenbuch_proposal_form
+msgid "Reject"
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#: model:ir.model.fields.selection,name:partner_firmenbuch_at.selection__firmenbuch_proposal__state__rejected
+msgid "Rejected"
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#: model:ir.model.fields.selection,name:partner_firmenbuch_at.selection__firmenbuch_proposal__state__outdated
+msgid "Replaced by a newer proposal"
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#: model:ir.model.fields,field_description:partner_firmenbuch_at.field_firmenbuch_search_wizard__result_ids
+msgid "Results"
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#: model_terms:ir.ui.view,arch_db:partner_firmenbuch_at.view_firmenbuch_search_wizard_form
+msgid "Search"
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#: model:ir.model,name:partner_firmenbuch_at.model_firmenbuch_search_wizard
+msgid "Search the Austrian business register"
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#: model:ir.model.fields,field_description:partner_firmenbuch_at.field_firmenbuch_search_result__seat
+msgid "Seat"
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#: model:ir.model.fields,field_description:partner_firmenbuch_at.field_res_partner__fb_size_class
+#: model:ir.model.fields,field_description:partner_firmenbuch_at.field_res_users__fb_size_class
+msgid "Size class (UGB)"
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#: model:ir.model.fields,help:partner_firmenbuch_at.field_res_partner__fb_size_class
+#: model:ir.model.fields,help:partner_firmenbuch_at.field_res_users__fb_size_class
+msgid ""
+"Size class of the company according to § 221 UGB as filed with the annual "
+"accounts. Small companies do not have to publish their turnover."
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#: model:ir.model.fields.selection,name:partner_firmenbuch_at.selection__res_partner__fb_size_class__k
+msgid "Small"
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#: model:ir.model.fields,field_description:partner_firmenbuch_at.field_firmenbuch_proposal__source
+msgid "Source"
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#: model:ir.model.fields,field_description:partner_firmenbuch_at.field_firmenbuch_proposal__state
+msgid "State"
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#: model:ir.model.fields,field_description:partner_firmenbuch_at.field_bev_street__name
+msgid "Street"
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#: model:ir.model.fields,field_description:partner_firmenbuch_at.field_bev_address__skz
+#: model:ir.model.fields,field_description:partner_firmenbuch_at.field_bev_street__skz
+msgid "Street code"
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#. odoo-python
+#: code:addons/partner_firmenbuch_at/models/bev_address.py:0
+msgid "Street found, house number %s not in the register."
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#. odoo-python
+#: code:addons/partner_firmenbuch_at/models/bev_address.py:0
+msgid "Street not found at postcode %s."
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#: model_terms:ir.ui.view,arch_db:partner_firmenbuch_at.res_config_settings_view_form
+msgid "Test connection"
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#. odoo-python
+#: code:addons/partner_firmenbuch_at/models/res_partner_bev.py:0
+msgid ""
+"The Austrian address register proposes a correction (%(f)s). <a "
+"href=\"/odoo/firmenbuch.proposal/%(id)s\">Review proposal</a>"
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#. odoo-python
+#: code:addons/partner_firmenbuch_at/models/bev_address.py:0
+msgid "The BEV download service lists no ZIP file for %s."
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#. odoo-python
+#: code:addons/partner_firmenbuch_at/models/bev_address.py:0
+msgid "The address register has not been imported yet."
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#. odoo-python
+#: code:addons/partner_firmenbuch_at/models/bev_address.py:0
+msgid "The address register suggests a correction."
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#. odoo-python
+#: code:addons/partner_firmenbuch_at/models/res_partner.py:0
+msgid ""
+"The business register proposes %(n)s change(s) (%(f)s). <a "
+"href=\"/odoo/firmenbuch.proposal/%(id)s\">Review proposal</a>"
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#. odoo-python
+#: code:addons/partner_firmenbuch_at/models/res_config_settings.py:0
+msgid ""
+"The update runs in the background (a few minutes). The result is posted in "
+"the notification channel."
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#: model:ir.model.fields.selection,name:partner_firmenbuch_at.selection__firmenbuch_proposal__state__pending
+#: model_terms:ir.ui.view,arch_db:partner_firmenbuch_at.view_firmenbuch_proposal_search
+msgid "To review"
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#. odoo-python
+#: code:addons/partner_firmenbuch_at/models/bev_address.py:0
+msgid "Unknown Austrian postcode %s."
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#: model_terms:ir.ui.view,arch_db:partner_firmenbuch_at.res_config_settings_view_form
+msgid "Update now"
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#: model:ir.model.fields.selection,name:partner_firmenbuch_at.selection__res_partner__bev_status__valid
+msgid "Valid"
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#: model:ir.model.fields,field_description:partner_firmenbuch_at.field_res_config_settings__bev_enabled
+msgid "Validate Austrian addresses"
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#: model:ir.model.fields,field_description:partner_firmenbuch_at.field_res_config_settings__firmenbuch_warn_loss
+msgid "Warn on annual loss"
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#: model:ir.model.fields.selection,name:partner_firmenbuch_at.selection__res_partner__fb_risk__warning
+msgid "Warning"
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#: model:ir.model.fields,field_description:partner_firmenbuch_at.field_res_config_settings__firmenbuch_warning_keywords
+msgid "Warning keywords"
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#: model:ir.model.fields,field_description:partner_firmenbuch_at.field_firmenbuch_search_result__wizard_id
+msgid "Wizard"
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#: model_terms:ir.ui.view,arch_db:partner_firmenbuch_at.res_config_settings_view_form
+msgid "X-API-KEY"
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#. odoo-python
+#: code:addons/partner_firmenbuch_at/models/res_partner.py:0
+msgid "date"
+msgstr ""
+
+#. module: partner_firmenbuch_at
+#. odoo-python
+#: code:addons/partner_firmenbuch_at/models/res_config_settings.py:0
+msgid "not imported yet"
+msgstr ""

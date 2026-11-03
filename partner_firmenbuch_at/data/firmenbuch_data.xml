@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!-- Copyright 2026 Biricon IT Services GmbH
+     License LGPL-3.0 or later (https://www.gnu.org/licenses/lgpl). -->
+<odoo>
+    <data noupdate="1">
+        <record id="channel_firmenbuch" model="discuss.channel">
+            <field name="name">Firmenbuch</field>
+            <field name="channel_type">channel</field>
+            <field name="description">Proposals and warnings from the Austrian business register</field>
+            <field name="group_public_id" ref="base.group_user"/>
+        </record>
+    </data>
+    <record id="ir_cron_firmenbuch_pending" model="ir.cron">
+        <field name="name">Business register: look up new companies</field>
+        <field name="model_id" ref="base.model_res_partner"/>
+        <field name="state">code</field>
+        <field name="code">model._cron_fb_pending()</field>
+        <field name="interval_number">10</field>
+        <field name="interval_type">minutes</field>
+    </record>
+    <record id="ir_cron_firmenbuch_monitor" model="ir.cron">
+        <field name="name">Business register: monitor companies</field>
+        <field name="model_id" ref="base.model_res_partner"/>
+        <field name="state">code</field>
+        <field name="code">model._cron_fb_monitor()</field>
+        <field name="interval_number">1</field>
+        <field name="interval_type">days</field>
+        <field name="nextcall" eval="(DateTime.now().replace(hour=4, minute=30) + timedelta(days=1)).strftime('%Y-%m-%d %H:%M:%S')"/>
+    </record>
+    <record id="ir_cron_bev_update" model="ir.cron">
+        <field name="name">Address register (BEV): update</field>
+        <field name="model_id" ref="model_bev_register"/>
+        <field name="state">code</field>
+        <field name="code">model._cron_update()</field>
+        <field name="interval_number">1</field>
+        <field name="interval_type">weeks</field>
+        <field name="nextcall" eval="(DateTime.now().replace(hour=3, minute=15) + timedelta(days=1)).strftime('%Y-%m-%d %H:%M:%S')"/>
+    </record>
+</odoo>

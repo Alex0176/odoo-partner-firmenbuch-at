@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!-- Copyright 2026 Biricon IT Services GmbH
+     License LGPL-3.0 or later (https://www.gnu.org/licenses/lgpl). -->
+<odoo>
+    <record id="res_config_settings_view_form" model="ir.ui.view">
+        <field name="name">res.config.settings.view.form.firmenbuch</field>
+        <field name="model">res.config.settings</field>
+        <field name="inherit_id" ref="base.res_config_settings_view_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//form" position="inside">
+                <app data-string="Business Register" string="Business Register" name="partner_firmenbuch_at"
+                     groups="base.group_system">
+                    <block title="Austrian business register (Firmenbuch)" name="firmenbuch_access">
+                        <setting string="API key"
+                                 help="Free personal key of the official BMJ web service (High Value Datasets). Apply with ID Austria on JustizOnline → Informationsweiterverwendung → API “FBW”.">
+                            <field name="firmenbuch_api_key" password="True" placeholder="X-API-KEY"/>
+                            <div class="mt8">
+                                <button name="action_firmenbuch_test" type="object" string="Test connection"
+                                        icon="fa-plug" class="btn-link"/>
+                                <a href="https://justizonline.gv.at/jop/web/iwg/register" target="_blank"
+                                   class="btn btn-link ms-3" role="button"><i class="fa fa-external-link me-1"/>Apply for a key</a>
+                            </div>
+                        </setting>
+                        <setting string="Notification channel"
+                                 help="Proposals and warnings are posted in this Discuss channel.">
+                            <field name="firmenbuch_channel_id" placeholder="Firmenbuch"/>
+                        </setting>
+                    </block>
+                    <block title="Austrian address register (BEV)" name="bev_address">
+                        <setting help="Austrian addresses are checked against the official address register of the BEV (open data, updated twice a year). Corrections are proposed and reported in the notification channel.">
+                            <field name="bev_enabled"/>
+                            <div class="mt8 text-muted" invisible="not bev_enabled">
+                                <span>Reference date: </span><field name="bev_stichtag" class="oe_inline"/>
+                                <span> · </span><field name="bev_count" class="oe_inline"/><span> addresses</span>
+                                <div><field name="bev_attribution"/></div>
+                            </div>
+                            <div class="mt8" invisible="not bev_enabled">
+                                <button name="action_bev_update" type="object" string="Update now" icon="fa-download"
+                                        class="btn-link"/>
+                            </div>
+                        </setting>
+                        <setting help="Imports every house number (about 2.5 million rows). Without, only streets per postcode are kept (about 150,000 rows)." invisible="not bev_enabled">
+                            <field name="bev_house_numbers"/>
+                        </setting>
+                        <setting help="After a new reference date has been loaded, all Austrian addresses are checked again; one summary message is posted." invisible="not bev_enabled">
+                            <field name="bev_revalidate"/>
+                        </setting>
+                        <setting help="By default only new contacts and the summary after an update are reported in the chat; corrections are always proposed." invisible="not bev_enabled">
+                            <field name="bev_notify_changes"/>
+                        </setting>
+                    </block>
+                    <block title="New companies" name="firmenbuch_new">
+                        <setting help="Austrian companies (or companies without country) are searched in the register right after they are created.">
+                            <field name="firmenbuch_auto_lookup"/>
+                        </setting>
+                        <setting help="Empty fields (address, register number, court, legal form) are filled in directly; differing values are always proposed.">
+                            <field name="firmenbuch_fill_empty"/>
+                        </setting>
+                    </block>
+                    <block title="Monitoring" name="firmenbuch_monitor">
+                        <setting help="Every night the register is asked which companies changed; known partners are checked again and changes proposed.">
+                            <field name="firmenbuch_monitor"/>
+                            <div class="mt8" invisible="not firmenbuch_monitor">
+                                <label for="firmenbuch_recheck_days" class="o_light_label"/>
+                                <field name="firmenbuch_recheck_days" class="oe_inline"/>
+                                <div class="text-muted">0 = only on changes</div>
+                            </div>
+                        </setting>
+                        <setting help="Reads the latest annual accounts filed as XML; negative equity (and optionally a loss) triggers a warning.">
+                            <field name="firmenbuch_check_accounts"/>
+                            <div class="mt8" invisible="not firmenbuch_check_accounts">
+                                <field name="firmenbuch_warn_loss"/>
+                                <label for="firmenbuch_warn_loss" class="o_light_label"/>
+                            </div>
+                        </setting>
+                        <setting string="Keywords" help="Comma separated. Found in a valid register entry, they set the status to critical or warning.">
+                            <div class="content-group">
+                                <label for="firmenbuch_critical_keywords" class="o_light_label"/>
+                                <field name="firmenbuch_critical_keywords"/>
+                                <label for="firmenbuch_warning_keywords" class="o_light_label"/>
+                                <field name="firmenbuch_warning_keywords"/>
+                            </div>
+                        </setting>
+                        <setting string="Annual accounts item codes" help="Element names / codes in the XML annual accounts (comma separated, first found wins).">
+                            <div class="content-group">
+                                <label for="firmenbuch_equity_codes" class="o_light_label"/>
+                                <field name="firmenbuch_equity_codes"/>
+                                <label for="firmenbuch_result_codes" class="o_light_label"/>
+                                <field name="firmenbuch_result_codes"/>
+                                <label for="firmenbuch_total_codes" class="o_light_label"/>
+                                <field name="firmenbuch_total_codes"/>
+                                <label for="firmenbuch_equity_ratio_min" class="o_light_label"/>
+                                <field name="firmenbuch_equity_ratio_min"/>
+                            </div>
+                        </setting>
+                    </block>
+                </app>
+            </xpath>
+        </field>
+    </record>
+</odoo>

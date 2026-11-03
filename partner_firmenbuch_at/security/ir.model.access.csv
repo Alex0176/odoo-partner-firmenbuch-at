@@ -1,0 +1,10 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_firmenbuch_proposal_user,firmenbuch.proposal user,model_firmenbuch_proposal,base.group_user,1,0,0,0
+access_firmenbuch_proposal_manager,firmenbuch.proposal manager,model_firmenbuch_proposal,base.group_partner_manager,1,1,1,1
+access_firmenbuch_proposal_line_user,firmenbuch.proposal.line user,model_firmenbuch_proposal_line,base.group_user,1,0,0,0
+access_firmenbuch_proposal_line_manager,firmenbuch.proposal.line manager,model_firmenbuch_proposal_line,base.group_partner_manager,1,1,1,1
+access_firmenbuch_search_wizard,firmenbuch.search.wizard,model_firmenbuch_search_wizard,base.group_partner_manager,1,1,1,1
+access_firmenbuch_search_result,firmenbuch.search.result,model_firmenbuch_search_result,base.group_partner_manager,1,1,1,1
+access_bev_locality_user,bev.locality user,model_bev_locality,base.group_user,1,0,0,0
+access_bev_street_user,bev.street user,model_bev_street,base.group_user,1,0,0,0
+access_bev_address_user,bev.address user,model_bev_address,base.group_user,1,0,0,0
