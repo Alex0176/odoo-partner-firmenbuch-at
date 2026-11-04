@@ -59,8 +59,14 @@
                         <setting help="A contact whose name contains GmbH, Ges.m.b.H., AG, KG, OG, OHG, KEG, SE or e.U. is saved as a company (not for contacts of a company, addresses or partners of users). The daily monitoring also corrects existing contacts.">
                             <field name="firmenbuch_company_names"/>
                         </setting>
-                        <setting help="During a register check, a company with a website but without image gets the favicon of its home page as image. The daily monitoring completes up to 30 companies per run.">
+                        <setting help="During a register check, a company with a website but without image gets the favicon of its home page as image. The daily monitoring completes missing images, about one minute per run; websites without icon are retried after 30 days.">
                             <field name="firmenbuch_favicon"/>
+                        </setting>
+                        <setting help="A company without website gets the website of the e-mail domain of its own address (or of its contacts, if the name is recognisable there), if the domain is no mail provider, is not shared with other companies and the website answers. A company without any e-mail address is found by a domain derived from its name, if the page carries the name and the zip code or city. Only empty fields are filled; the company image is fetched afterwards.">
+                            <field name="firmenbuch_website_from_email"/>
+                        </setting>
+                        <setting help="A company with a website but without e-mail address gets the address from the imprint or contact page of its website (same domain only). Contacts without company take website and image of the company with the same e-mail domain. Only empty fields are filled.">
+                            <field name="firmenbuch_email_from_website"/>
                         </setting>
                     </block>
                     <block title="Monitoring" name="firmenbuch_monitor">

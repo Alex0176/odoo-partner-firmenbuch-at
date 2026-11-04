@@ -1460,10 +1460,44 @@ msgstr "Firmenbild aus dem Favicon der Webseite"
 
 #. module: partner_firmenbuch_at
 #: model_terms:ir.ui.view,arch_db:partner_firmenbuch_at.res_config_settings_view_form
-msgid "A contact whose name contains GmbH, Ges.m.b.H., AG, KG, OG, OHG, KEG, SE or e.U. is saved as a company (not for contacts of a company, addresses or partners of users). The daily monitoring also corrects existing contacts."
-msgstr "Ein Kontakt, dessen Name GmbH, Ges.m.b.H., AG, KG, OG, OHG, KEG, SE oder e.U. enthält, wird als Unternehmen gespeichert (nicht bei Ansprechpartnern eines Unternehmens, Adressen oder Partnern von Benutzern). Die tägliche Überwachung korrigiert auch bestehende Kontakte."
+msgid ""
+"A contact whose name contains GmbH, Ges.m.b.H., AG, KG, OG, OHG, KEG, SE or "
+"e.U. is saved as a company (not for contacts of a company, addresses or "
+"partners of users). The daily monitoring also corrects existing contacts."
+msgstr ""
+"Ein Kontakt, dessen Name GmbH, Ges.m.b.H., AG, KG, OG, OHG, KEG, SE oder "
+"e.U. enthält, wird als Unternehmen gespeichert (nicht bei Ansprechpartnern "
+"eines Unternehmens, Adressen oder Partnern von Benutzern). Die tägliche "
+"Überwachung korrigiert auch bestehende Kontakte."
 
 #. module: partner_firmenbuch_at
 #: model_terms:ir.ui.view,arch_db:partner_firmenbuch_at.res_config_settings_view_form
-msgid "During a register check, a company with a website but without image gets the favicon of its home page as image. The daily monitoring completes up to 30 companies per run."
-msgstr "Bei einer Firmenbuchprüfung erhält ein Unternehmen mit Webseite, aber ohne Bild das Favicon seiner Startseite als Bild. Die tägliche Überwachung ergänzt bis zu 30 Unternehmen je Lauf."
+msgid ""
+"During a register check, a company with a website but without image gets the"
+" favicon of its home page as image. The daily monitoring completes missing "
+"images, about one minute per run; websites without icon are retried after 30"
+" days."
+msgstr ""
+"Bei einer Firmenbuchprüfung erhält ein Unternehmen mit Webseite, aber ohne "
+"Bild das Favicon seiner Startseite als Bild. Die tägliche Überwachung "
+"ergänzt fehlende Bilder, etwa eine Minute je Lauf; Webseiten ohne Icon "
+"werden nach 30 Tagen erneut versucht."
+
+#. module: partner_firmenbuch_at
+#: model_terms:ir.ui.view,arch_db:partner_firmenbuch_at.res_config_settings_view_form
+msgid "A company without website gets the website of the e-mail domain of its own address (or of its contacts, if the name is recognisable there), if the domain is no mail provider, is not shared with other companies and the website answers. A company without any e-mail address is found by a domain derived from its name, if the page carries the name and the zip code or city. Only empty fields are filled; the company image is fetched afterwards."
+msgstr "Ein Unternehmen ohne Webseite erhält die Webseite der E-Mail-Domain seiner eigenen Adresse (oder seiner Kontakte, wenn dort der Name erkennbar ist), wenn die Domain kein Mailanbieter ist, nicht von anderen Unternehmen geteilt wird und die Webseite antwortet. Ein Unternehmen ganz ohne E-Mail-Adresse wird über eine aus dem Namen abgeleitete Domain gefunden, wenn die Seite den Namen und die PLZ oder den Ort trägt. Es werden nur leere Felder gefüllt; das Firmenbild wird danach abgerufen."
+#. module: partner_firmenbuch_at
+#: model:ir.model.fields,field_description:partner_firmenbuch_at.field_res_config_settings__firmenbuch_website_from_email
+msgid "Website from the e-mail domain of the contacts"
+msgstr "Webseite aus der E-Mail-Domain der Kontakte"
+
+#. module: partner_firmenbuch_at
+#: model_terms:ir.ui.view,arch_db:partner_firmenbuch_at.res_config_settings_view_form
+msgid "A company with a website but without e-mail address gets the address from the imprint or contact page of its website (same domain only). Contacts without company take website and image of the company with the same e-mail domain. Only empty fields are filled."
+msgstr "Ein Unternehmen mit Webseite, aber ohne E-Mail-Adresse erhält die Adresse aus dem Impressum oder der Kontaktseite seiner Webseite (nur dieselbe Domain). Kontakte ohne Unternehmen übernehmen Webseite und Bild des Unternehmens mit derselben E-Mail-Domain. Es werden nur leere Felder gefüllt."
+
+#. module: partner_firmenbuch_at
+#: model:ir.model.fields,field_description:partner_firmenbuch_at.field_res_config_settings__firmenbuch_email_from_website
+msgid "E-mail address from the website of the company"
+msgstr "E-Mail-Adresse von der Webseite des Unternehmens"

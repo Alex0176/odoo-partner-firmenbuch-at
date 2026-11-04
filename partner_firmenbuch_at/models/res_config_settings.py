@@ -22,6 +22,10 @@ class ResConfigSettings(models.TransientModel):
                                               config_parameter=P + "company_names", default=True)
     firmenbuch_favicon = fields.Boolean("Company image from the website favicon", config_parameter=P + "favicon",
                                         default=True)
+    firmenbuch_email_from_website = fields.Boolean(
+        "E-mail address from the website of the company", config_parameter=P + "email_from_website", default=True)
+    firmenbuch_website_from_email = fields.Boolean("Website from the e-mail domain of the contacts",
+                                                   config_parameter=P + "website_from_email", default=True)
     firmenbuch_monitor = fields.Boolean("Monitor companies daily", config_parameter=P + "monitor", default=True)
     firmenbuch_recheck_days = fields.Integer("Full re-check every (days)", config_parameter=P + "recheck_days",
                                              default=30)

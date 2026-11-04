@@ -1,9 +1,12 @@
 # Copyright 2026 Biricon IT Services GmbH
 # License LGPL-3.0 or later (https://www.gnu.org/licenses/lgpl).
 import html
+import json
 import logging
 import re
+import time
 from datetime import timedelta
+from urllib.parse import urlparse
 
 from markupsafe import Markup
 
@@ -12,11 +15,19 @@ from odoo.modules import module as odoo_module
 from odoo.exceptions import UserError
 
 from .favicon import fetch_favicon
+from .website import email_domains, find_email, find_website, find_website_by_name, name_tokens
 from .firmenbuch_client import (FirmenbuchAuthError, FirmenbuchClient, FirmenbuchError, annual_figures,
                                 format_fnr, normalize_fnr)
 
 _logger = logging.getLogger(__name__)
 P = "partner_firmenbuch_at."
+FAVICON_SWEEP_SECONDS = 60
+FAVICON_RETRY_DAYS = 30
+SWEEP_REV = 3  # raise when the search got better: earlier failures are then tried again
+
+
+def _rev_key(name):
+    return f"{name}_r{SWEEP_REV}"
 
 DEFAULT_CRITICAL = ("Konkursverfahren, Insolvenzverfahren, Sanierungsverfahren, Konkurs eröffnet, "
                     "Schuldenregulierungsverfahren, mangels Vermögens, mangels kostendeckenden Vermögens, "
@@ -217,6 +228,169 @@ class ResPartner(models.Model):
                 done |= p
                 _logger.info("Business register: favicon of %s taken from %s", p.display_name, p.website)
         return done
+
+    def _fb_tried(self, key):
+        """``{partner id: date}`` of earlier unsuccessful attempts that are not yet old enough to be repeated."""
+        cutoff = (fields.Date.today() - timedelta(days=FAVICON_RETRY_DAYS)).isoformat()
+        try:
+            tried = json.loads(self._fb_param(_rev_key(key), "{}") or "{}")
+        except ValueError:
+            tried = {}
+        return {k: v for k, v in tried.items() if v >= cutoff}
+
+    @api.model
+    def _fb_shared_domains(self):
+        """E-mail domains that are used by companies with different names (group, IT provider, tax advisor)."""
+        owners = {}
+        for c in self.with_context(active_test=False).search([("is_company", "=", True), ("parent_id", "=", False)]):
+            key = (name_tokens(c.name) or [c.name or ""])[0]
+            for domain in email_domains([c.email] + c.child_ids.mapped("email")):
+                owners.setdefault(domain, set()).add(key)
+        return frozenset(d for d, keys in owners.items() if len(keys) > 1)
+
+    def _fb_website_sweep(self, deadline):
+        """Companies without website get the one of their e-mail domain (own address and contacts), if the
+        domain is no mail provider, answers and carries the company name. Empty fields only."""
+        if self._fb_param("website_from_email", "True") != "True":
+            return
+        key = P + _rev_key("website_tried")
+        tried = self._fb_tried("website_tried")
+        today = fields.Date.today().isoformat()
+        partners = self.search([("is_company", "=", True), ("parent_id", "=", False), ("website", "=", False),
+                                ("id", "not in", [int(k) for k in tried])], order="id")
+        shared = None
+        for p in partners:
+            if time.monotonic() > deadline:
+                break
+            emails = [p.email] + p.child_ids.mapped("email")
+            if any(emails):
+                if shared is None:
+                    shared = self._fb_shared_domains()
+                url = find_website(p.name, emails, own=[p.email], shared=shared)
+            else:
+                url = find_website_by_name(p.name, p.zip, p.city)
+            if url:
+                p.with_context(fb_no_lookup=True, tracking_disable=True).write({"website": url})
+                _logger.info("Business register: website of %s derived from e-mail: %s", p.display_name, url)
+            else:
+                tried[str(p.id)] = today
+            self.env["ir.config_parameter"].sudo().set_param(key, json.dumps(tried))
+            self._fb_commit()
+
+    @staticmethod
+    def _fb_host(website):
+        return urlparse(website if "://" in (website or "") else "//" + (website or "")).netloc.lower().removeprefix("www.")
+
+    @api.model
+    def _fb_company_sites(self):
+        """``(domain -> website, host -> image)`` of the companies: the e-mail domains of a company (own address
+        and contacts) point to its website; a domain that points to two different websites is dropped."""
+        sites, images = {}, {}
+        companies = self.with_context(active_test=False).search(
+            [("is_company", "=", True), ("parent_id", "=", False), ("website", "!=", False)])
+        for c in companies:
+            host = self._fb_host(c.website)
+            if not host:
+                continue
+            if c.image_1920:
+                images.setdefault(host, c.image_1920)
+            for domain in set(email_domains([c.email] + c.child_ids.mapped("email"))) | {host}:
+                sites.setdefault(domain, set()).add(c.website)
+        return {d: next(iter(w)) for d, w in sites.items() if len(w) == 1}, images
+
+    def _fb_contact_sweep(self, deadline):
+        """Contacts (persons) without image: a person with a company gets the company image, a person without
+        company gets website and image of the company with the same e-mail domain, otherwise the website is
+        derived from the own e-mail domain like for a company. Empty fields only."""
+        favicon_on = self._fb_param("favicon", "True") == "True"
+        website_on = self._fb_param("website_from_email", "True") == "True"
+        if not favicon_on:
+            return
+        ICP = self.env["ir.config_parameter"].sudo()
+        today = fields.Date.today().isoformat()
+        tried = self._fb_tried("contact_tried")
+        persons = self.search([("is_company", "=", False), ("type", "=", "contact"), ("image_1920", "=", False),
+                               ("id", "not in", [int(k) for k in tried])], order="id", limit=400)
+        sites = images = shared = None
+        fetched = {}
+        for p in persons:
+            if time.monotonic() > deadline:
+                break
+            png = None
+            if p.parent_id:
+                png = p.parent_id.image_1920 or None
+            elif p.email and email_domains([p.email]):
+                if sites is None:
+                    sites, images = self._fb_company_sites()
+                    shared = self._fb_shared_domains()
+                website = p.website
+                domain = email_domains([p.email])[0]
+                if not website and website_on and (domain in sites or not domain.endswith(".gv.at")):
+                    website = sites.get(domain) or find_website(p.name, [p.email], own=[p.email], shared=shared)
+                    if website:
+                        p.with_context(fb_no_lookup=True, tracking_disable=True).write({"website": website})
+                        _logger.info("Business register: website of contact %s derived from e-mail: %s",
+                                     p.display_name, website)
+                if website:
+                    host = self._fb_host(website)
+                    png = images.get(host) or fetched.get(host)
+                    if not png and host not in fetched:
+                        png = fetched[host] = fetch_favicon(website)
+            if png:
+                p.with_context(fb_no_lookup=True).write({"image_1920": png})
+            else:
+                tried[str(p.id)] = today
+            ICP.set_param(P + _rev_key("contact_tried"), json.dumps(tried))
+            self._fb_commit()
+
+    @api.model
+    def _fb_favicon_sweep(self, budget=FAVICON_SWEEP_SECONDS):
+        """Complete missing websites and images within ``budget`` seconds (a cron job is killed after 120 s and
+        would roll everything back), committing after every partner: companies first, then contacts. Partners
+        for which nothing was found are skipped for ``FAVICON_RETRY_DAYS`` so that dead websites do not block
+        the queue."""
+        start = time.monotonic()
+        self._fb_website_sweep(start + budget / 4)
+        if self._fb_param("favicon", "True") != "True":
+            return
+        ICP = self.env["ir.config_parameter"].sudo()
+        today = fields.Date.today()
+        tried = self._fb_tried("favicon_tried")
+        partners = self.search([("is_company", "=", True), ("parent_id", "=", False), ("website", "!=", False),
+                               ("image_1920", "=", False), ("id", "not in", [int(k) for k in tried])],
+                               limit=200, order="id")
+        for p in partners:
+            if time.monotonic() > start + budget / 2:
+                break
+            if not p._fb_set_favicon():
+                tried[str(p.id)] = today.isoformat()
+            ICP.set_param(P + _rev_key("favicon_tried"), json.dumps(tried))
+            self._fb_commit()
+        self._fb_contact_sweep(start + budget * 3 / 4)
+        self._fb_email_sweep(start + budget)
+
+    def _fb_email_sweep(self, deadline):
+        """Companies with a website but without e-mail address get the address from the imprint/contact page
+        of that website (same domain only). Empty fields only; nothing is sent."""
+        if self._fb_param("email_from_website", "True") != "True":
+            return
+        ICP = self.env["ir.config_parameter"].sudo()
+        tried = self._fb_tried("email_tried")
+        today = fields.Date.today().isoformat()
+        partners = self.search([("is_company", "=", True), ("parent_id", "=", False), ("website", "!=", False),
+                                ("email", "=", False), ("id", "not in", [int(k) for k in tried])],
+                               order="id", limit=200)
+        for p in partners:
+            if time.monotonic() > deadline:
+                break
+            mail = find_email(p.website)
+            if mail:
+                p.with_context(fb_no_lookup=True, tracking_disable=True).write({"email": mail})
+                _logger.info("Business register: e-mail of %s taken from %s: %s", p.display_name, p.website, mail)
+            else:
+                tried[str(p.id)] = today
+            ICP.set_param(P + _rev_key("email_tried"), json.dumps(tried))
+            self._fb_commit()
 
     # ------------------------------------------------------------ buttons
     def action_fb_search(self):
@@ -609,7 +783,6 @@ class ResPartner(models.Model):
         self._fb_mark_companies(limit=200)
         self._fb_commit()
         try:
-            self.search([("is_company", "=", True), ("parent_id", "=", False), ("website", "!=", False),
-                         ("image_1920", "=", False)], limit=30)._fb_set_favicon()
+            self._fb_favicon_sweep()
         except Exception as e:  # noqa: BLE001 - never let the monitor fail because of an icon
             _logger.info("Business register: favicon sweep failed: %s", e)
