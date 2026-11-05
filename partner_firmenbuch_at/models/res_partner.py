@@ -14,6 +14,7 @@ from odoo import _, api, fields, models
 from odoo.modules import module as odoo_module
 from odoo.exceptions import UserError
 
+from .cron_budget import job_deadline, job_progress, load_state, save_state
 from .favicon import fetch_favicon
 from .website import email_domains, find_email, find_website, find_website_by_name, name_tokens
 from .firmenbuch_client import (FirmenbuchAuthError, FirmenbuchClient, FirmenbuchError, annual_figures,
@@ -23,6 +24,8 @@ _logger = logging.getLogger(__name__)
 P = "partner_firmenbuch_at."
 FAVICON_SWEEP_SECONDS = 60
 FAVICON_RETRY_DAYS = 30
+SWEEP_DAILY_SECONDS = 600   # per day for images, websites and e-mails (the load on foreign servers stays small)
+STALE_PER_DAY = 50
 SWEEP_REV = 3  # raise when the search got better: earlier failures are then tried again
 
 
@@ -252,7 +255,7 @@ class ResPartner(models.Model):
         """Companies without website get the one of their e-mail domain (own address and contacts), if the
         domain is no mail provider, answers and carries the company name. Empty fields only."""
         if self._fb_param("website_from_email", "True") != "True":
-            return
+            return False
         key = P + _rev_key("website_tried")
         tried = self._fb_tried("website_tried")
         today = fields.Date.today().isoformat()
@@ -261,7 +264,7 @@ class ResPartner(models.Model):
         shared = None
         for p in partners:
             if time.monotonic() > deadline:
-                break
+                return True
             emails = [p.email] + p.child_ids.mapped("email")
             if any(emails):
                 if shared is None:
@@ -276,6 +279,7 @@ class ResPartner(models.Model):
                 tried[str(p.id)] = today
             self.env["ir.config_parameter"].sudo().set_param(key, json.dumps(tried))
             self._fb_commit()
+        return False
 
     @staticmethod
     def _fb_host(website):
@@ -305,7 +309,7 @@ class ResPartner(models.Model):
         favicon_on = self._fb_param("favicon", "True") == "True"
         website_on = self._fb_param("website_from_email", "True") == "True"
         if not favicon_on:
-            return
+            return False
         ICP = self.env["ir.config_parameter"].sudo()
         today = fields.Date.today().isoformat()
         tried = self._fb_tried("contact_tried")
@@ -315,7 +319,7 @@ class ResPartner(models.Model):
         fetched = {}
         for p in persons:
             if time.monotonic() > deadline:
-                break
+                return True
             png = None
             if p.parent_id:
                 png = p.parent_id.image_1920 or None
@@ -342,17 +346,18 @@ class ResPartner(models.Model):
                 tried[str(p.id)] = today
             ICP.set_param(P + _rev_key("contact_tried"), json.dumps(tried))
             self._fb_commit()
+        return len(persons) == 400
 
     @api.model
     def _fb_favicon_sweep(self, budget=FAVICON_SWEEP_SECONDS):
         """Complete missing websites and images within ``budget`` seconds (a cron job is killed after 120 s and
         would roll everything back), committing after every partner: companies first, then contacts. Partners
         for which nothing was found are skipped for ``FAVICON_RETRY_DAYS`` so that dead websites do not block
-        the queue."""
+        the queue. Returns True if work is left that did not fit into the budget."""
         start = time.monotonic()
-        self._fb_website_sweep(start + budget / 4)
+        more = self._fb_website_sweep(start + budget / 4)
         if self._fb_param("favicon", "True") != "True":
-            return
+            return more
         ICP = self.env["ir.config_parameter"].sudo()
         today = fields.Date.today()
         tried = self._fb_tried("favicon_tried")
@@ -361,19 +366,22 @@ class ResPartner(models.Model):
                                limit=200, order="id")
         for p in partners:
             if time.monotonic() > start + budget / 2:
+                more = True
                 break
             if not p._fb_set_favicon():
                 tried[str(p.id)] = today.isoformat()
             ICP.set_param(P + _rev_key("favicon_tried"), json.dumps(tried))
             self._fb_commit()
-        self._fb_contact_sweep(start + budget * 3 / 4)
-        self._fb_email_sweep(start + budget)
+        else:
+            more = more or len(partners) == 200
+        more = self._fb_contact_sweep(start + budget * 3 / 4) or more
+        return self._fb_email_sweep(start + budget) or more
 
     def _fb_email_sweep(self, deadline):
         """Companies with a website but without e-mail address get the address from the imprint/contact page
         of that website (same domain only). Empty fields only; nothing is sent."""
         if self._fb_param("email_from_website", "True") != "True":
-            return
+            return False
         ICP = self.env["ir.config_parameter"].sudo()
         tried = self._fb_tried("email_tried")
         today = fields.Date.today().isoformat()
@@ -382,7 +390,7 @@ class ResPartner(models.Model):
                                order="id", limit=200)
         for p in partners:
             if time.monotonic() > deadline:
-                break
+                return True
             mail = find_email(p.website)
             if mail:
                 p.with_context(fb_no_lookup=True, tracking_disable=True).write({"email": mail})
@@ -391,6 +399,7 @@ class ResPartner(models.Model):
                 tried[str(p.id)] = today
             ICP.set_param(P + _rev_key("email_tried"), json.dumps(tried))
             self._fb_commit()
+        return len(partners) == 200
 
     # ------------------------------------------------------------ buttons
     def action_fb_search(self):
@@ -680,14 +689,20 @@ class ResPartner(models.Model):
         label = dict(RISK)[self.fb_risk]
         self._fb_notify(Markup("<b>%s</b> - %s") % (label, self.fb_risk_note or ""), users=users)
 
-    def _fb_check_batch(self, accounts=True, title=None):
-        """Check several companies; one summary message in the channel instead of one per company."""
+    def _fb_check_batch(self, accounts=True, title=None, deadline=None):
+        """Check several companies; one summary message in the channel instead of one per company. After
+        ``deadline`` (monotonic) no further company is started; ``done`` of the result are the ones handled."""
         client = self._fb_client()
         Proposal = self.env["firmenbuch.proposal"]
         before = set(Proposal.search([("partner_id", "in", self.ids), ("state", "=", "pending")]).ids)
         old_risk = {p.id: p.fb_risk for p in self}
         errors = []
-        for p in self.filtered(lambda x: x.fb_fnr and x.is_company and not x.parent_id):
+        todo = self.filtered(lambda x: x.fb_fnr and x.is_company and not x.parent_id)
+        done = self - todo
+        for p in todo:
+            if deadline and time.monotonic() > deadline:
+                break
+            done |= p
             try:
                 p.with_context(fb_silent=True)._fb_refresh(client, accounts=accounts)
                 self._fb_commit()
@@ -696,16 +711,16 @@ class ResPartner(models.Model):
             except FirmenbuchError as e:
                 errors.append((p, str(e)))
                 _logger.info("Business register check %s failed: %s", p.display_name, e)
-        new_props = Proposal.search([("partner_id", "in", self.ids), ("state", "=", "pending"),
+        new_props = Proposal.search([("partner_id", "in", done.ids), ("state", "=", "pending"),
                                      ("id", "not in", list(before))])
-        changed = self.filtered(lambda p: RANK[p.fb_risk] > max(RANK[old_risk[p.id]], RANK["ok"]))
-        ch = self._fb_channel()
+        changed = done.filtered(lambda p: RANK[p.fb_risk] > max(RANK[old_risk[p.id]], RANK["ok"]))
+        ch = self._fb_channel() if done else None
         if ch:
             def link(p, extra=""):
                 return Markup('<li><a href="/odoo/res.partner/%d">%s</a>%s</li>') % (p.id, p.display_name, extra)
-            body = Markup("<p><b>%s</b></p>") % (title or _("Business register: %s companies checked") % len(self))
-            crit = self.filtered(lambda p: p.fb_risk == "critical")
-            warn = self.filtered(lambda p: p.fb_risk == "warning")
+            body = Markup("<p><b>%s</b></p>") % (title or _("Business register: %s companies checked") % len(done))
+            crit = done.filtered(lambda p: p.fb_risk == "critical")
+            warn = done.filtered(lambda p: p.fb_risk == "warning")
             if crit:
                 body += Markup("<p>%s</p><ul>%s</ul>") % (_("Critical:"), Markup("").join(
                     link(p, Markup(" - %s") % (p.fb_risk_note or "")) for p in crit))
@@ -724,7 +739,7 @@ class ResPartner(models.Model):
             if not (crit or warn or new_props or errors):
                 body += Markup("<p>%s</p>") % _("No findings, no changes.")
             ch.sudo().message_post(body=body, message_type="comment", subtype_xmlid="mail.mt_comment")
-        return {"checked": len(self), "proposals": new_props, "changed": changed, "errors": errors}
+        return {"checked": len(done), "done": done, "proposals": new_props, "changed": changed, "errors": errors}
 
     # ------------------------------------------------------------ crons
     def _fb_commit(self):
@@ -751,11 +766,33 @@ class ResPartner(models.Model):
 
     @api.model
     def _cron_fb_monitor(self):
-        """Daily: companies changed in the register since the last run, then stale checks."""
+        """Daily: companies changed in the register since the last run, then stale checks, housekeeping and the
+        image sweep. The work is cut into steps that fit into one cron process; ``monitor_job`` keeps the state
+        so that the next call continues where the last one stopped (nothing is lost when a process is killed)."""
         if not self._fb_param("api_key") or self._fb_param("monitor", "True") != "True":
             return
-        client = self._fb_client()
+        deadline = job_deadline(self.env)
+        key = P + "monitor_job"
+        state = load_state(self.env, key)
+        if state is None:
+            state = self._fb_monitor_start()
+            if state is None:
+                return
+        if time.monotonic() >= deadline:
+            return job_progress(self.env, 0, remaining=1)
+        try:
+            more = self._fb_monitor_step(state, deadline)
+        except FirmenbuchAuthError as e:
+            _logger.warning("Business register: %s", e)  # the state stays: the next day continues the cycle
+            return job_progress(self.env, 0, remaining=0)
+        save_state(self.env, key, state if more else None)
+        job_progress(self.env, 1, remaining=1 if more else 0)
+
+    @api.model
+    def _fb_monitor_start(self):
+        """Register changes since the last run -> state of a new daily cycle (``None`` on an authentication error)."""
         ICP = self.env["ir.config_parameter"].sudo()
+        client = self._fb_client()
         today = fields.Date.context_today(self)
         last = fields.Date.to_date(ICP.get_param(P + "last_monitor") or "") or today - timedelta(days=1)
         start = max(last, today - timedelta(days=30))
@@ -764,25 +801,60 @@ class ResPartner(models.Model):
             docs = {c["fnr"] for c in client.changes(start, today, documents=True)}
         except FirmenbuchAuthError as e:
             _logger.warning("Business register: %s", e)
-            return
+            return None
         partners = self.search([("fb_fnr", "in", list(changed | docs)), ("is_company", "=", True),
-                                 ("parent_id", "=", False)])
-        if partners:
-            partners._fb_check_batch(title=_("Business register: %s companies changed in the register")
-                                     % len(partners))
+                                ("parent_id", "=", False)])
         ICP.set_param(P + "last_monitor", today.isoformat())
+        state = {"queue": partners.ids, "stale_left": STALE_PER_DAY if int(self._fb_param("recheck_days", "30") or 0)
+                 else 0, "stale_done": [], "marked": False, "sweep_seconds": 0}
+        save_state(self.env, P + "monitor_job", state)
+        self._fb_commit()
+        return state
+
+    @api.model
+    def _fb_monitor_step(self, state, deadline):
+        """Work off the cycle until the deadline; True if something is left."""
+        if state["queue"]:
+            partners = self.browse(state["queue"]).exists()
+            res = partners._fb_check_batch(
+                title=_("Business register: %s companies changed in the register") % len(partners), deadline=deadline)
+            state["queue"] = [i for i in partners.ids if i not in res["done"].ids]
+            save_state(self.env, P + "monitor_job", state)
+            self._fb_commit()
+            if state["queue"]:
+                return True
         days = int(self._fb_param("recheck_days", "30") or 0)
-        if days:
+        while days and state["stale_left"] > 0 and time.monotonic() < deadline:
             stale = self.search([("fb_fnr", "!=", False), ("is_company", "=", True), ("parent_id", "=", False),
+                                 ("id", "not in", state["stale_done"]),
                                  "|", ("fb_last_check", "=", False),
                                  ("fb_last_check", "<", fields.Datetime.now() - timedelta(days=days))],
-                                limit=50, order="fb_last_check asc nulls first")
-            if stale:
-                stale._fb_check_batch(title=_("Business register: periodic check of %s companies") % len(stale))
+                                limit=state["stale_left"], order="fb_last_check asc nulls first")
+            if not stale:
+                state["stale_left"] = 0
+                break
+            res = stale._fb_check_batch(
+                title=_("Business register: periodic check of %s companies") % len(stale), deadline=deadline)
+            state["stale_done"] += res["done"].ids
+            state["stale_left"] -= len(res["done"])
+            save_state(self.env, P + "monitor_job", state)
+            self._fb_commit()
+        if state["stale_left"] > 0 and days:
+            return True
         # housekeeping independent of the register: legal form in the name, missing company images
-        self._fb_mark_companies(limit=200)
-        self._fb_commit()
+        if not state["marked"]:
+            self._fb_mark_companies(limit=200)
+            state["marked"] = True
+            save_state(self.env, P + "monitor_job", state)
+            self._fb_commit()
+        budget = min(deadline - time.monotonic(), SWEEP_DAILY_SECONDS - state["sweep_seconds"])
+        if budget < 5:
+            return time.monotonic() >= deadline and state["sweep_seconds"] < SWEEP_DAILY_SECONDS - 5
+        began = time.monotonic()
         try:
-            self._fb_favicon_sweep()
+            more = self._fb_favicon_sweep(budget=budget)
         except Exception as e:  # noqa: BLE001 - never let the monitor fail because of an icon
             _logger.info("Business register: favicon sweep failed: %s", e)
+            return False
+        state["sweep_seconds"] += int(time.monotonic() - began) + 1
+        return more and state["sweep_seconds"] < SWEEP_DAILY_SECONDS - 5

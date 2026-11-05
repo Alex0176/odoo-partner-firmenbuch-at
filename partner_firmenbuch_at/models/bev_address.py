@@ -13,7 +13,7 @@ import io
 import logging
 import os
 import re
-import tempfile
+import time
 import unicodedata
 import xml.etree.ElementTree as ET
 import zipfile
@@ -23,9 +23,13 @@ import requests
 
 from odoo import _, api, fields, models
 from odoo.exceptions import UserError
+from odoo.tools import config
+
+from .cron_budget import job_deadline, job_progress, load_state, save_state
 
 _logger = logging.getLogger(__name__)
 P = "partner_firmenbuch_at."
+BEV_PORTION = 50  # addresses per commit during the re-check
 ATOM_SERVICE = "https://data.bev.gv.at/geonetwork/srv/atom/describe/service?uuid=68cb9fac-e9ca-4366-b41f-79195fd31360"
 ATOM = "{http://www.w3.org/2005/Atom}"
 TITLE_RE = re.compile(r"Adresse Relationale Tabellen Stichtag (\d{2})\.(\d{2})\.(\d{4})")
@@ -131,26 +135,64 @@ class BevRegister(models.AbstractModel):
         raise UserError(_("The BEV download service lists no ZIP file for %s.") % best[0])
 
     @api.model
+    def _download(self, url, path):
+        with open(path, "wb") as f, requests.get(url, stream=True, timeout=600) as r:
+            r.raise_for_status()
+            for chunk in r.iter_content(1 << 20):
+                f.write(chunk)
+
+    @api.model
     def _cron_update(self, force=False):
+        """Weekly. Step 1: download and import (about a minute, committed at once); step 2: re-check the addresses
+        in portions. Each call stays within the time budget of a cron process and continues where the last one
+        stopped (state in ``bev_job``)."""
         ICP = self.env["ir.config_parameter"].sudo()
         if ICP.get_param(P + "bev_enabled", "True") != "True" and not force:
             return
-        stichtag, url = self._latest_release()
-        current = ICP.get_param(P + "bev_stichtag")
-        if not force and current and current >= stichtag.isoformat():
-            _logger.info("BEV address register is up to date (%s)", current)
-            return
-        fd, path = tempfile.mkstemp(suffix=".zip")
-        try:
-            with os.fdopen(fd, "wb") as f, requests.get(url, stream=True, timeout=600) as r:
-                r.raise_for_status()
-                for chunk in r.iter_content(1 << 20):
-                    f.write(chunk)
-            self._import_zip(path, stichtag)
-        finally:
-            os.unlink(path)
-        if ICP.get_param(P + "bev_revalidate", "True") == "True":
-            self.env["res.partner"]._bev_validate_all()
+        deadline = job_deadline(self.env)
+        state = load_state(self.env, P + "bev_job")
+        if not state:
+            stichtag, url = self._latest_release()
+            current = ICP.get_param(P + "bev_stichtag")
+            if not force and current and current >= stichtag.isoformat():
+                _logger.info("BEV address register is up to date (%s)", current)
+                return
+            # a fixed file in the data directory (not tmpfs): a killed process leaves no pile of 120 MB files behind
+            path = os.path.join(config["data_dir"], "bev_import.zip")
+            try:
+                self._download(url, path)
+                self._import_zip(path, stichtag)
+            finally:
+                if os.path.exists(path):
+                    os.unlink(path)
+            if ICP.get_param(P + "bev_revalidate", "True") != "True":
+                job_progress(self.env, 1, remaining=0)
+                return
+            state = {"after": 0, "checked": 0, "proposals": 0}
+            save_state(self.env, P + "bev_job", state)
+            job_progress(self.env, 1, remaining=1)
+        self._bev_revalidate_step(state, deadline)
+
+    @api.model
+    def _bev_revalidate_step(self, state, deadline):
+        """Re-check Austrian addresses (id order) until the deadline; the summary message follows the last portion."""
+        Partner = self.env["res.partner"]
+        at = self.env.ref("base.at")
+        domain = [("country_id", "=", at.id), ("street", "!=", False)]
+        while time.monotonic() < deadline:
+            part = Partner.search(domain + [("id", ">", state["after"])], order="id", limit=BEV_PORTION)
+            if not part:
+                Partner._bev_validate_summary(state)
+                save_state(self.env, P + "bev_job", None)
+                job_progress(self.env, 0, remaining=0)
+                return
+            props = part._bev_validate(notify=False)
+            state["after"] = part[-1].id
+            state["checked"] += len(part)
+            state["proposals"] += len(props)
+            save_state(self.env, P + "bev_job", state)
+            job_progress(self.env, len(part), remaining=1)
+        job_progress(self.env, 0, remaining=1)
 
     @api.model
     def _import_zip(self, path, stichtag):

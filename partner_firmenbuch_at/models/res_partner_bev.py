@@ -87,19 +87,26 @@ class ResPartner(models.Model):
 
     @api.model
     def _bev_validate_all(self):
-        """After an import: re-check all Austrian addresses, one summary message instead of one per partner."""
+        """Re-check all Austrian addresses in one go (not for cron jobs: see ``bev.register._cron_update``)."""
         at = self.env.ref("base.at")
         partners = self.search([("country_id", "=", at.id), ("street", "!=", False)])
         props = partners._bev_validate(notify=False)
-        ch = self._fb_channel()
-        if ch:
-            counts = {s: len(partners.filtered(lambda p, s=s: p.bev_status == s))
-                      for s in ("valid", "house", "suggest", "invalid")}
-            ch.sudo().message_post(
-                message_type="comment", subtype_xmlid="mail.mt_comment",
-                body=Markup(_("Address register updated (%(attr)s). Checked: %(n)s addresses - valid %(v)s, house "
-                              "number unknown %(h)s, not found %(i)s. <b>%(p)s new correction proposals</b> "
-                              "(Contacts → Business Register → Proposals).")) % {
-                    "attr": self.env["bev.register"].attribution(), "n": len(partners), "v": counts["valid"],
-                    "h": counts["house"], "i": counts["invalid"], "p": len(props)})
+        self._bev_validate_summary({"checked": len(partners), "proposals": len(props)})
         return props
+
+    @api.model
+    def _bev_validate_summary(self, state):
+        """One summary message instead of one per partner."""
+        ch = self._fb_channel()
+        if not ch:
+            return
+        at = self.env.ref("base.at")
+        base = [("country_id", "=", at.id), ("street", "!=", False)]
+        counts = {s: self.search_count(base + [("bev_status", "=", s)]) for s in ("valid", "house", "suggest", "invalid")}
+        ch.sudo().message_post(
+            message_type="comment", subtype_xmlid="mail.mt_comment",
+            body=Markup(_("Address register updated (%(attr)s). Checked: %(n)s addresses - valid %(v)s, house "
+                          "number unknown %(h)s, not found %(i)s. <b>%(p)s new correction proposals</b> "
+                          "(Contacts → Business Register → Proposals).")) % {
+                "attr": self.env["bev.register"].attribution(), "n": state["checked"], "v": counts["valid"],
+                "h": counts["house"], "i": counts["invalid"], "p": state["proposals"]})
